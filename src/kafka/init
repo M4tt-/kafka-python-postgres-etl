@@ -5,3 +5,5 @@ cd ~/kafka    # Go to dedicated kafka dir
 bin/zookeeper-server-start.sh config/zookeeper.properties  # Launch ZooKeeper in one process
 bin/kafka-server-start.sh config/server.properties  # Launch Kafka server in one process
 bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092  # Create a topic
+bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server localhost:9092 # Create producer in one process
+bin/kafka-console-consumer.sh --topic quickstart-events --from-beginning --bootstrap-server localhost:9092 # Create consumer in one process
