@@ -19,7 +19,6 @@ From the command line, navigate to the repo root and execute::
 # pylint: disable=R0201
 # %% IMPORTS
 import pytest
-import sys
 import time
 
 import set_paths       # pylint: disable=W0611
