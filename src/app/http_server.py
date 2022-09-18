@@ -12,11 +12,12 @@ It is implemented using Flask.
 
 from flask import request, Flask
 
-# %% CONSTANTS
+from constants import (DEFAULT_HTTP_LISTENER,
+                       DEFAULT_HTTP_PORT,
+                       DEFAULT_URL_RULE
+)
 
-DEFAULT_HOST = "0.0.0.0"
-DEFAULT_PORT = 5000
-DEFAULT_RULE = "events"
+# %% CONSTANTS
 
 # %% CLASSES
 
@@ -24,7 +25,10 @@ DEFAULT_RULE = "events"
 class HTTPServer:
     """Basic HTTP Server to handle requests."""
 
-    def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, rule=DEFAULT_RULE):
+    def __init__(self,
+                 host=DEFAULT_HTTP_LISTENER,
+                 port=DEFAULT_HTTP_PORT,
+                 rule=DEFAULT_URL_RULE):
         """Constructor.
 
         Parameters:

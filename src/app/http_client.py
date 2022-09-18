@@ -11,13 +11,20 @@ This module contains a class ``HTTPClient`` to make HTTP requests.
 
 import requests
 
+from constants import (DEFAULT_HTTP_PORT,
+                       DEFAULT_URL_RULE
+)
+
 # %% CLASSES
 
 
 class HTTPClient:
     """Basic HTTP Client."""
 
-    def __init__(self, server=None, port=None, rule=None):
+    def __init__(self,
+                 server=None,
+                 port=DEFAULT_HTTP_PORT,
+                 rule=DEFAULT_URL_RULE):
         """Constructor.
 
         Parameters:

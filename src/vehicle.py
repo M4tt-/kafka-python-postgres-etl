@@ -12,6 +12,16 @@ This module contains a class that produces simulated data from a vehicle.
 # %% IMPORTS
 import random, string
 
+from constants import (DEFAULT_HTTP_PORT,
+                       DEFAULT_URL_RULE,
+                       STREAM_METRIC_MAKE,
+                       STREAM_METRIC_MODEL,
+                       STREAM_METRIC_POS,
+                       STREAM_METRIC_SPEED,
+                       STREAM_METRIC_VIN
+)
+from data_utils import Formatter
+from http_client import HTTPClient
 from location import Location
 
 # %% CONSTANTS
@@ -39,11 +49,14 @@ def generate_vin():
 # %% CLASSES
 
 
-class Vehicle:
+class Vehicle(HTTPClient):
     """A vehicle that can stream its own performance metrics."""
 
     # -------------------------------------------------------------------------
     def __init__(self,
+                 server=None,
+                 port=DEFAULT_HTTP_PORT,
+                 rule=DEFAULT_URL_RULE,
                  vin=generate_vin(),
                  make=DEFAULT_MAKE,
                  model=random.choice(MODEL_CHOICES),
@@ -60,6 +73,7 @@ class Vehicle:
             Vehicle: instance.
         """
 
+        super().__init__(server=server, port=port, rule=rule)
         self.vin = vin
         self.make = make
         self.model = model
@@ -67,6 +81,16 @@ class Vehicle:
         self.gps = Location()
         if auto_start:
             self.start_trip()
+
+    # -------------------------------------------------------------------------
+    def get_position(self):
+        """Get the position of the vehicle.
+
+        Returns:
+            tuple: The Cartesian position in Euclidean 3-Space.
+        """
+
+        return (self.gps.x_of_t, self.gps.y_of_t, self.gps.z_of_t)
 
     # -------------------------------------------------------------------------
     def get_speed(self):
@@ -102,3 +126,20 @@ class Vehicle:
         """
 
         self.gps.stop_trip()
+
+    # -------------------------------------------------------------------------
+    def report(self):
+        """Report diagnostics to server.
+
+        Returns:
+            None.
+        """
+
+        speed = self.get_speed()
+        position = self.get_position()
+        results = {STREAM_METRIC_MAKE: self.make,
+                   STREAM_METRIC_MODEL: self.model,
+                   STREAM_METRIC_POS: position,
+                   STREAM_METRIC_SPEED: speed,
+                   STREAM_METRIC_VIN: self.vin}
+        return self.send(data=results)

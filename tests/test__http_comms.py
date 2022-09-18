@@ -52,14 +52,14 @@ import requests
 import time
 
 import set_paths
+from constants import (ENV_VAR_CONFIG,
+                       PROCESS_INIT_DELAY,
+                       PROCESS_KILL_DELAY
+)
 from http_client import HTTPClient
 from http_server import HTTPServer
 
 # %% CONSTANTS
-
-ENV_VAR_CONFIG = 'PYTEST_CONFIG'
-PROCESS_INIT_DELAY = 0.05       # seconds
-PROCESS_KILL_DELAY = 0.05       # seconds
 
 # %% TESTS
 
