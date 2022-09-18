@@ -21,8 +21,12 @@ From the command line, navigate to the repo root and execute::
 import json
 from multiprocessing import Process
 import os
+from pathlib import Path
 import pytest
 import requests
+import sys
+BASEPATH = Path(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(BASEPATH.parents[0])
 import time
 
 import set_paths       # pylint: disable=W0611
