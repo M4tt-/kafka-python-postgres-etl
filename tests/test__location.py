@@ -18,12 +18,8 @@ From the command line, navigate to the repo root and execute::
 # pylint: disable=C0411
 # pylint: disable=R0201
 # %% IMPORTS
-import os
-from pathlib import Path
 import pytest
 import sys
-BASEPATH = Path(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(BASEPATH.parents[0])
 import time
 
 import set_paths       # pylint: disable=W0611
