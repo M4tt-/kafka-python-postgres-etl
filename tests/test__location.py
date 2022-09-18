@@ -13,12 +13,15 @@ From the command line, navigate to the repo root and execute::
 
     python -m pytest tests/test__location.py -v
 """
-
+# pylint: disable=W0621
+# pylint: disable=C0103
+# pylint: disable=C0411
+# pylint: disable=R0201
 # %% IMPORTS
 import pytest
 import time
 
-import set_paths
+import set_paths       # pylint: disable=W0611
 from location import Location
 
 # %% CONSTANTS
@@ -28,6 +31,7 @@ TIME_DELAY = 1
 
 @pytest.fixture(scope='module')
 def my_location():
+    """The Location object to use throughout the test suite."""
     location = Location()
     location.start_trip()
     yield location

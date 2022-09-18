@@ -19,7 +19,7 @@ class Formatter:
     """Useful for converting data formats."""
 
     @classmethod
-    def format_data_label(self, data_label=None, sub=DEFAULT_REPLACEMENT_CHAR):
+    def format_data_label(cls, data_label=None, sub=DEFAULT_REPLACEMENT_CHAR):
         """Format a data label to follow some convention.
 
         This will throw a TypeError if the supplied data_label is not str.
@@ -40,7 +40,7 @@ class Formatter:
         return data_label
 
     @classmethod
-    def format_data_value(self, data_value):
+    def format_data_value(cls, data_value):
         """Format a data value into the correct type.
 
         Parameters:

@@ -1,4 +1,14 @@
-from kafka import KafkaConsumer
+"""
+
+:author: mrunyon
+
+Description
+-----------
+
+This module contains example usage of KafkaConsumer from kafka-python.
+"""
+
+from kafka import KafkaConsumer    # pylint: disable=E0611
 
 BOOTSTRAP_SERVER = "localhost:9092"
 TOPIC = "quickstart-events"

@@ -44,6 +44,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='HTTPServer App')
     parser.add_argument('--host', help='Server host, e.g., 0.0.0.0')
     parser.add_argument('--port', help='Server port, e.g., 5000')
-    args = parser.parse_args()
+    parsed_args = parser.parse_args()
 
-    main(args)
+    main(parsed_args)

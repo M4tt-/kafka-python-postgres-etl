@@ -17,7 +17,6 @@ From the command line::
 # %% IMPORTS
 
 import argparse
-import time
 
 from app.http_client import HTTPClient
 
@@ -39,7 +38,7 @@ def main(args):
     """
 
     client = HTTPClient(args.server, args.port, args.rule)
-    for request in range(NUM_REQUESTS):
+    for _ in range(NUM_REQUESTS):
         client.send()
 
 
@@ -49,6 +48,6 @@ if __name__ == '__main__':
     parser.add_argument('--server', help='Server host, e.g., 10.0.0.105')
     parser.add_argument('--port', help='Server port, e.g., 5000')
     parser.add_argument('--rule', help='Server rule, e.g., events')
-    args = parser.parse_args()
+    parsed_args = parser.parse_args()
 
-    main(args)
+    main(parsed_args)

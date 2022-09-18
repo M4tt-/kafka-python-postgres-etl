@@ -10,7 +10,8 @@ This module contains a class that produces simulated data from a vehicle.
 """
 
 # %% IMPORTS
-import random, string
+import random
+import string
 
 from constants import (DEFAULT_HTTP_PORT,
                        DEFAULT_URL_RULE,
@@ -20,8 +21,7 @@ from constants import (DEFAULT_HTTP_PORT,
                        STREAM_METRIC_SPEED,
                        STREAM_METRIC_VIN
 )
-from data_utils import Formatter
-from http_client import HTTPClient
+from http_client import HTTPClient    # pylint: disable=C0411
 from location import Location
 
 # %% CONSTANTS
@@ -96,11 +96,6 @@ class Vehicle(HTTPClient):
     def get_speed(self):
         """Get the speed of the vehicle.
 
-        Parameters:
-            vin (str): The vehicle identification number.
-            make (str): The make of the vehicle.
-            model (str): The model of the vehicle.
-
         Returns:
             float: the net speed of the vehicle in m/s.
         """
@@ -132,7 +127,7 @@ class Vehicle(HTTPClient):
         """Report diagnostics to server.
 
         Returns:
-            None.
+            requests.Response: The HTTP Response object.
         """
 
         speed = self.get_speed()

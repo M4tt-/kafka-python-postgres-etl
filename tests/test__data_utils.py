@@ -13,11 +13,11 @@ From the command line, navigate to the repo root and execute::
 
     python -m pytest tests/test__data_utils.py -v
 """
-
+# pylint: disable=R0201
 # %% IMPORTS
 import pytest
 
-import set_paths
+import set_paths       # pylint: disable=W0611
 from data_utils import Formatter
 
 # %% TESTS
@@ -78,9 +78,8 @@ class TestFormatter:
     def test_08_format_data_label(self):
         """Ensure the data label is formatted as expected."""
         test_obj = -18
-        expected_obj = None
         with pytest.raises(AttributeError):
-            actual_obj = Formatter.format_data_label(test_obj)
+            Formatter.format_data_label(test_obj)
 
     def test_09_format_data_label(self):
         """Ensure the data label is formatted as expected."""

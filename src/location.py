@@ -1,5 +1,5 @@
 """
-:author: Matt Runyon
+:author: mrunyon
 
 Description
 -----------
@@ -7,12 +7,13 @@ Description
 This module contains a class ``Location`` that is used to retrieve the
 GPS coordinates of a simulated object.
 """
-
+#pylint: disable=C0103
 # %% IMPORTS
 
-import numpy as np
 import time
 from typing import Callable
+
+import numpy as np
 
 # %% CONSTANTS
 
@@ -65,32 +66,32 @@ class Location:
         self.vy_rand = np.random.rand()
         self.vz_rand = np.random.rand()
 
-    @property    # pylint: disable=C0116
-    def vx(self):
+    @property
+    def vx(self):    # pylint: disable=C0116
         return self.compute_vx()
 
-    @property    # pylint: disable=C0116
-    def vy(self):
+    @property
+    def vy(self):    # pylint: disable=C0116
         return self.compute_vy()
 
-    @property    # pylint: disable=C0116
-    def vz(self):
+    @property
+    def vz(self):    # pylint: disable=C0116
         return self.compute_vz()
 
-    @property    # pylint: disable=C0116
-    def x_of_t(self):
+    @property
+    def x_of_t(self):    # pylint: disable=C0116
         return self.compute_x_of_t()
 
-    @property    # pylint: disable=C0116
-    def y_of_t(self):
+    @property
+    def y_of_t(self):    # pylint: disable=C0116
         return self.compute_y_of_t()
 
-    @property    # pylint: disable=C0116
-    def z_of_t(self):
+    @property
+    def z_of_t(self):    # pylint: disable=C0116
         return self.compute_z_of_t()
 
-    @property    # pylint: disable=C0116
-    def elapsed_time(self):
+    @property
+    def elapsed_time(self):    # pylint: disable=C0116
         return self.get_time()
 
     # -------------------------------------------------------------------------
@@ -122,11 +123,12 @@ class Location:
 
         if isinstance(self.vx_calc, (int, float)):
             return self.vx_rand*self.vx_calc
-        elif isinstance(self.vx_calc, Callable):
+        if isinstance(self.vx_calc, Callable):
             try:
                 return self.vx_calc(self.elapsed_time)
             except AttributeError:
                 return 0
+        return None
 
     # -------------------------------------------------------------------------
     def compute_vy(self):
@@ -144,11 +146,12 @@ class Location:
 
         if isinstance(self.vy_calc, (int, float)):
             return self.vy_rand*self.vy_calc
-        elif isinstance(self.vy_calc, Callable):
+        if isinstance(self.vy_calc, Callable):
             try:
                 return self.vy_calc(self.elapsed_time)
             except AttributeError:
                 return 0
+        return None
 
     # -------------------------------------------------------------------------
     def compute_vz(self):
@@ -166,11 +169,12 @@ class Location:
 
         if isinstance(self.vz_calc, (int, float)):
             return self.vz_rand*self.vz_calc
-        elif isinstance(self.vz_calc, Callable):
+        if isinstance(self.vz_calc, Callable):
             try:
                 return self.vz_calc(self.elapsed_time)
             except AttributeError:
                 return 0
+        return None
 
     # -------------------------------------------------------------------------
     def compute_x_of_t(self):

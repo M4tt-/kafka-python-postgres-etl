@@ -42,7 +42,9 @@ Recommended pytest_opts:
 
     $pytest tests/test__http_comms.py -W ignore::DeprecationWarning -v
 """
-
+# pylint: disable=W0621
+# pylint: disable=C0411
+# pylint: disable=R0201
 # %% IMPORTS
 import json
 from multiprocessing import Process
@@ -51,7 +53,7 @@ import pytest
 import requests
 import time
 
-import set_paths
+import set_paths       # pylint: disable=W0611
 from constants import (ENV_VAR_CONFIG,
                        PROCESS_INIT_DELAY,
                        PROCESS_KILL_DELAY
@@ -72,7 +74,7 @@ def config(conf):
     except KeyError:
         env_var = conf
 
-    with open(env_var) as file:
+    with open(env_var, 'r') as file:
         config_json = json.load(file)
     return config_json
 
@@ -80,8 +82,8 @@ def config(conf):
 def my_http_client(config):
     """HTTPClient to use for testing."""
     return HTTPClient(server=config.get("server"),
-                        port=config.get("port"),
-                        rule=config.get("rule"))
+                      port=config.get("port"),
+                      rule=config.get("rule"))
 
 @pytest.fixture(scope='module')
 def my_http_server(config):

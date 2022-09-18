@@ -1,4 +1,14 @@
-from kafka import KafkaProducer
+"""
+
+:author: mrunyon
+
+Description
+-----------
+
+This module contains example usage of KafkaProducer from kafka-python.
+"""
+
+from kafka import KafkaProducer    # pylint: disable=E0611
 
 BOOTSTRAP_SERVER = 'localhost:9092'
 TEST_MESSAGE = "This message came from Python!"

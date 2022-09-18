@@ -57,7 +57,7 @@ class HTTPServer:
 
         self.__app.run(host=self.host, port=self.port)
 
-    def process_event(self):
+    def process_event(self):   # pylint: disable=R0201
         """Process a request.
 
         Returns:
@@ -65,7 +65,6 @@ class HTTPServer:
         """
 
         if request.method in ['GET']:
-            event_type = request.args.get('event')
             return "Welcome to HTTPServer!"
 
         if request.method in ['POST']:
@@ -75,10 +74,12 @@ class HTTPServer:
 
             return {'msg': f'Event from {request.remote_addr} logged'}, 200
 
-    def stop(self):
+        return None
+
+    def stop(self):     # pylint: disable=R0201
         """Stop the server.
 
         Returns:
             None.
         """
-        pass
+        return None
