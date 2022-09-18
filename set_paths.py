@@ -33,13 +33,12 @@ for root, dirs, files in os.walk(BASEPATH):
     # Skip all hidden directories
     if top.startswith('.') or top.startswith('_'):
         continue
-    else:
 
-        # Declare top level folder of subdirectory
-        root_path, top_folder = os.path.split(root)
+    # Declare top level folder of subdirectory
+    root_path, top_folder = os.path.split(root)
 
-        if not top_folder.startswith('.') and not top_folder.startswith('_'):
-            sub_dirs.append(root)
+    if not top_folder.startswith('.') and not top_folder.startswith('_'):
+        sub_dirs.append(root)
 
 if VERBOSITY:
     print("\nFolders found:\n")

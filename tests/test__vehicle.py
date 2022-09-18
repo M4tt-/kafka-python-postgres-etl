@@ -49,7 +49,7 @@ def config(conf):
     except KeyError:
         env_var = conf
 
-    with open(env_var, 'r') as file:
+    with open(env_var, 'r', encoding="utf-8") as file:
         config_json = json.load(file)
     return config_json
 
