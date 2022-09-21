@@ -8,6 +8,20 @@
 - The web server should send the raw data to a data store (ELT)
 - The web server should use the Kafka Streams API to process the data into a uniform format before sending it to SQL (ETL)
 
+## Getting Started
+
+1. Ensure you are using the right environment (Python 3.6 w/ requirements.txt satisfied).
+2. If running locally, you need to have PostgreSQL installed:
+
+    sudo apt update
+    sudo apt install postgresql postgresql-contrib
+    sudo systemctl start postgresql.service
+    sudo -u postgres psql
+
+2. Run ``src/kafka/init.sh`` to get Kafka up and running locally.
+3. 
+
+
 ## Tests
 
 Navigate to the root repo folder and execute::
