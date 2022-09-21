@@ -12,6 +12,7 @@ This module contains a class that produces simulated data from a vehicle.
 # %% IMPORTS
 import random
 import string
+import time
 
 from constants import (DEFAULT_HTTP_PORT,
                        DEFAULT_URL_RULE,
@@ -19,6 +20,7 @@ from constants import (DEFAULT_HTTP_PORT,
                        STREAM_METRIC_MODEL,
                        STREAM_METRIC_POS,
                        STREAM_METRIC_SPEED,
+                       STREAM_METRIC_TIME,
                        STREAM_METRIC_VIN
 )
 from http_client import HTTPClient    # pylint: disable=C0411
@@ -132,7 +134,8 @@ class Vehicle(HTTPClient):
 
         speed = self.get_speed()
         position = self.get_position()
-        results = {STREAM_METRIC_MAKE: self.make,
+        results = {STREAM_METRIC_TIME: time.time(),
+                   STREAM_METRIC_MAKE: self.make,
                    STREAM_METRIC_MODEL: self.model,
                    STREAM_METRIC_POS: position,
                    STREAM_METRIC_SPEED: speed,

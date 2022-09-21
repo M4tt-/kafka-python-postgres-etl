@@ -36,6 +36,7 @@ class HTTPServer(KafkaProducer):
         """Constructor.
 
         Parameters:
+            bootstrap_servers (str): The Kafka server:port.
             host (str): The hostname to listen on.
             port (int): The port.
             rule (str): The default rule endpoint for event processing.
@@ -78,8 +79,7 @@ class HTTPServer(KafkaProducer):
             if not event_data:
                 return 'Invalid event type or format!', 400
 
-            json = self.publish_event(data=event_data, topic='test_topic')
-            return json
+            return self.publish_event(data=event_data, topic='test_topic')
         return None
 
     def publish_event(self, data=None, topic=None, encoding=DEFAULT_PRODUCER_ENCODING):   # pylint: disable=R0201
