@@ -35,7 +35,7 @@ def main(args):
         None.
     """
 
-    app = HTTPServer(args.host, args.port)
+    app = HTTPServer(host=args.host, port=args.port)
     app.start()
 
 

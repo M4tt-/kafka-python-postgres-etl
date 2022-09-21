@@ -37,7 +37,7 @@ def main(args):
         None.
     """
 
-    client = HTTPClient(args.server, args.port, args.rule)
+    client = HTTPClient(server=args.server, port=args.port, rule=args.rule)
     for _ in range(NUM_REQUESTS):
         client.send()
 

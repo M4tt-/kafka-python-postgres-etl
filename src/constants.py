@@ -11,6 +11,7 @@ This module houses constants used throughout the software project.
 # %% CONSTANTS
 DEFAULT_HTTP_LISTENER = "0.0.0.0"
 DEFAULT_HTTP_PORT = 5000
+DEFAULT_PRODUCER_ENCODING = "utf-8"
 DEFAULT_REPLACEMENT_CHAR = '_'
 DEFAULT_URL_RULE = "events"
 ENV_VAR_CONFIG = 'PYTEST_CONFIG'
