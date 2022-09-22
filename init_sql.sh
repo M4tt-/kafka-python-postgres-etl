@@ -61,7 +61,19 @@ export PGPASSWORD=$PG_PASSWORD
 psql -U $PG_USER -tc "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'" | grep -q 1 || psql -U $PG_USER -c "CREATE DATABASE $DB_NAME"
 
 # Create the table within the database if it doesn't exist
-
 SCHEMA="(id integer PRIMARY KEY, timestamp float, vin varchar(17), make varchar(20), model varchar(20), position varchar(50), speed float)"
 CREATE_TBL_CMD="CREATE TABLE IF NOT EXISTS $TABLE $SCHEMA;"
 psql -U $PG_USER -d $DB_NAME -c "$CREATE_TBL_CMD"
+
+# Verify the table exists and output the message
+CHECK="SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name='$TABLE')"
+result=`psql -U $PG_USER -d $DB_NAME -Axqtc "$CHECK"`
+exists=`echo "$result" | cut -d"|" -f2`
+
+if [ "$exists" == "t" ]; then
+    echo "Success: Table $TABLE created.";
+    exit 0;
+else
+    echo "Failure: Table $TABLE doesn't exist.";
+    exit 1;
+fi
