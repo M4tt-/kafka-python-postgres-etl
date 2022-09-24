@@ -29,14 +29,17 @@ class HTTPServer(KafkaProducer):
     """Basic HTTP Server to handle requests."""
 
     def __init__(self,
-                 bootstrap_servers="localhost:9092",
                  host=DEFAULT_HTTP_LISTENER,    # FIXME: Change this kwarg to 'ingress'
                  port=DEFAULT_HTTP_PORT,        # FIXME: Change this kwarg to 'http_port'
-                 rule=DEFAULT_URL_RULE):
+                 rule=DEFAULT_URL_RULE,
+                 **consumer_kwargs):
         """Constructor.
 
         Parameters:
-            bootstrap_servers (str): The Kafka server:port.
+            consumer_kwargs (dict): Dict of kwargs to pass to KafkaConsumer
+                                    __init__.
+                                    bootstrap_servers: str
+                                    topic: str
             host (str): The hostname to listen on.
             port (int): The port.
             rule (str): The default rule endpoint for event processing.
@@ -45,8 +48,10 @@ class HTTPServer(KafkaProducer):
             None.
         """
 
-
-        super().__init__(bootstrap_servers=bootstrap_servers)
+        self.topic = consumer_kwargs.get('topic', None)
+        self.bootstrap_servers = consumer_kwargs.get('bootstrap_servers',
+                                                     "localhost:9092")
+        super().__init__(bootstrap_servers=self.bootstrap_servers)
         self.host = host
         self.port = port
         self.rule = rule
@@ -54,15 +59,6 @@ class HTTPServer(KafkaProducer):
         self.__app.add_url_rule(rule=f'/{self.rule}',
                                 methods=['GET', 'POST'],
                                 view_func=self.process_event)
-
-    def start(self):
-        """Start the server.
-
-        Returns:
-            None.
-        """
-
-        self.__app.run(host=self.host, port=self.port)
 
     def process_event(self):   # pylint: disable=R0201
         """Process a request.
@@ -79,15 +75,14 @@ class HTTPServer(KafkaProducer):
             if not event_data:
                 return 'Invalid event type or format!', 400
 
-            return self.publish_event(data=event_data, topic='test_topic')
+            return self.publish_event(data=event_data)
         return None
 
-    def publish_event(self, data=None, topic=None, encoding=DEFAULT_PRODUCER_ENCODING):   # pylint: disable=R0201
+    def publish_event(self, data=None, encoding=DEFAULT_PRODUCER_ENCODING):   # pylint: disable=R0201
         """Publish an event to a Kafka Topic.
 
         Parameters:
             data (dict): The event to publish.
-            topic (str): The topic name to publish to.
             encoding (str): The encoding of the data.
 
         Returns:
@@ -95,8 +90,17 @@ class HTTPServer(KafkaProducer):
         """
 
         event = json.dumps(data)
-        self.send(topic, bytearray(event.encode(encoding)))
+        self.send(self.topic, bytearray(event.encode(encoding)))
         return event
+
+    def start(self):
+        """Start the server.
+
+        Returns:
+            None.
+        """
+
+        self.__app.run(host=self.host, port=self.port)
 
     def stop(self):     # pylint: disable=R0201
         """Stop the server.

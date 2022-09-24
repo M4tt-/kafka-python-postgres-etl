@@ -22,9 +22,9 @@ class HTTPClient:
     """Basic HTTP Client."""
 
     def __init__(self,
-                 server=None,
-                 port=DEFAULT_HTTP_PORT,
-                 rule=DEFAULT_URL_RULE):
+                 server=None,             #FIXME: change this to http_server
+                 port=DEFAULT_HTTP_PORT,  #FIXME: change this to http_port
+                 rule=DEFAULT_URL_RULE):  #FIXME: change this to http_rule
         """Constructor.
 
         Parameters:

@@ -45,9 +45,15 @@ def main(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='HTTPServer App')
-    parser.add_argument('--server', help='Server host, e.g., 10.0.0.105')
-    parser.add_argument('--port', help='Server port, e.g., 5000')
-    parser.add_argument('--rule', help='Server rule, e.g., events')
+    parser.add_argument('--server',
+                        help='Server host, e.g., 10.0.0.105',
+                        default='localhost')
+    parser.add_argument('--port',
+                        help='Server port, e.g., 5000',
+                        deafult=5000)
+    parser.add_argument('--rule',
+                        help='Server rule, e.g., events',
+                        default='events')
     parsed_args = parser.parse_args()
 
     main(parsed_args)

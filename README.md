@@ -35,9 +35,20 @@
          local   all             postgres                         md5
     - Restart the server: sudo systemctl restart postgresql.service
     - Verify the authentication is valid by typing psql -U postgres and entering the password when prompted.
+3. If running locally, ensure Kafka is installed:
+
+   - Get JRE8:
+     sudo apt-get update
+     sudo apt-get install openjdk-8-jre
+   - Set JAVA_HOME env car to jre8 dir:
+     export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
+   - Download and extract Kafka:
+     sudo curl --output ~/Downloads/kafka_2.13-3.2.1.tar.gz
+     tar -xzf kafka_2.13-3.2.1.tgz
 
 2. Run ``src/kafka/init.sh`` to get Kafka up and running locally.
-3. 
+3. Run ``init_sql.sh -u PGUSER -p PGPASS`` to set up sql database/table.
+4. Run ``main.py`` to start the simulation (?)
 
 
 ## Tests

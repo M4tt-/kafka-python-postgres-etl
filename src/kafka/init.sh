@@ -35,7 +35,7 @@ Help()
 ############################################################
 
 # Get the options
-while getopts ":hp:t:d:" option; do
+while getopts ":hp:t:d:l:" option; do
    case $option in
       h) # display Help
          Help
@@ -84,7 +84,7 @@ sudo touch "$ZOOKEEPER_LOG"
 sudo chmod +r-- "$ZOOKEEPER_LOG"
 cd $KAFKA_DIR && nohup bin/zookeeper-server-start.sh config/zookeeper.properties | sudo tee "$ZOOKEEPER_LOG" &
 
-# PID for ZooKeeper: ps -eo pid,command | grep "QuorumPeer" | grep -v grep | awk '{print $1}' 
+# PID for ZooKeeper: ps -eo pid,command | grep "QuorumPeer" | grep -v grep | awk '{print $1}'
 
 # Launch Kafka in its own process
 sudo touch "$SERVER_LOG"
