@@ -81,16 +81,16 @@ def config(conf):
 @pytest.fixture(scope='module')
 def my_http_client(config):
     """HTTPClient to use for testing."""
-    return HTTPClient(server=config.get("server"),
-                      port=config.get("port"),
-                      rule=config.get("rule"))
+    return HTTPClient(http_server=config.get("server"),
+                      http_port=config.get("port"),
+                      http_rule=config.get("rule"))
 
 @pytest.fixture(scope='module')
 def my_http_server(config):
     """HTTPServer to use for testing."""
-    return HTTPServer(host=config.get("host"),
-                      port=config.get("port"),
-                      rule=config.get("rule"))
+    return HTTPServer(ingress=config.get("host"),
+                      http_port=config.get("port"),
+                      http_rule=config.get("rule"))
 
 @pytest.fixture(autouse=True, scope='module')
 def server_process(my_http_server):

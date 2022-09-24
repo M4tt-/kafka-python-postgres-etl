@@ -46,9 +46,12 @@
      sudo curl --output ~/Downloads/kafka_2.13-3.2.1.tar.gz
      tar -xzf kafka_2.13-3.2.1.tgz
 
-2. Run ``src/kafka/init.sh`` to get Kafka up and running locally.
-3. Run ``init_sql.sh -u PGUSER -p PGPASS`` to set up sql database/table.
-4. Run ``main.py`` to start the simulation (?)
+4. Run ``src/kafka/init.sh`` to get Kafka up and running locally.
+5. Run ``init_sql.sh -u PGUSER -p PGPASS`` to set up sql database/table.
+6. Run ``python src/launch_server.py`` in separate process to launch HTTP server (receive dummy data).
+7. Run ``python src/launch_consumer.py`` in separate process to launch KafkaConsumer (consume dummy data).
+8. Run ``python src/launch_client.py`` in separate process to launch HTTP Client (to send dummy data).
+
 
 
 ## Tests

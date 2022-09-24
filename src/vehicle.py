@@ -56,9 +56,9 @@ class Vehicle(HTTPClient):
 
     # -------------------------------------------------------------------------
     def __init__(self,
-                 server=None,
-                 port=DEFAULT_HTTP_PORT,
-                 rule=DEFAULT_URL_RULE,
+                 http_server=None,
+                 http_port=DEFAULT_HTTP_PORT,
+                 http_rule=DEFAULT_URL_RULE,
                  vin=generate_vin(),
                  make=DEFAULT_MAKE,
                  model=random.choice(MODEL_CHOICES),
@@ -66,6 +66,9 @@ class Vehicle(HTTPClient):
         """Constructor.
 
         Parameters:
+            http_server (str): The HTTP server to communicate with.
+            http_port (int): The port.
+            http_rule (str): The rule (page) to make requests to.
             vin (str): The vehicle identification number.
             make (str): The make of the vehicle.
             model (str): The model of the vehicle.
@@ -75,7 +78,9 @@ class Vehicle(HTTPClient):
             Vehicle: instance.
         """
 
-        super().__init__(server=server, port=port, rule=rule)
+        super().__init__(http_server=http_server,
+                         http_port=http_port,
+                         http_rule=http_rule)
         self.vin = vin
         self.make = make
         self.model = model

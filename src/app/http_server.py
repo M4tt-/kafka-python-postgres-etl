@@ -29,9 +29,9 @@ class HTTPServer(KafkaProducer):
     """Basic HTTP Server to handle requests."""
 
     def __init__(self,
-                 host=DEFAULT_HTTP_LISTENER,    # FIXME: Change this kwarg to 'ingress'
-                 port=DEFAULT_HTTP_PORT,        # FIXME: Change this kwarg to 'http_port'
-                 rule=DEFAULT_URL_RULE,
+                 ingress=DEFAULT_HTTP_LISTENER,
+                 http_port=DEFAULT_HTTP_PORT,        # FIXME: Change this kwarg to 'http_port'
+                 http_rule=DEFAULT_URL_RULE,
                  **consumer_kwargs):
         """Constructor.
 
@@ -40,9 +40,9 @@ class HTTPServer(KafkaProducer):
                                     __init__.
                                     bootstrap_servers: str
                                     topic: str
-            host (str): The hostname to listen on.
-            port (int): The port.
-            rule (str): The default rule endpoint for event processing.
+            ingress (str): The hostname to listen on.
+            http_port (int): The port.
+            http_rule (str): The default rule endpoint for event processing.
 
         Returns:
             None.
@@ -52,11 +52,11 @@ class HTTPServer(KafkaProducer):
         self.bootstrap_servers = consumer_kwargs.get('bootstrap_servers',
                                                      "localhost:9092")
         super().__init__(bootstrap_servers=self.bootstrap_servers)
-        self.host = host
-        self.port = port
-        self.rule = rule
+        self.ingress = ingress
+        self.http_port = http_port
+        self.http_rule = http_rule
         self.__app = Flask(__name__)
-        self.__app.add_url_rule(rule=f'/{self.rule}',
+        self.__app.add_url_rule(rule=f'/{self.http_rule}',
                                 methods=['GET', 'POST'],
                                 view_func=self.process_event)
 
@@ -81,6 +81,10 @@ class HTTPServer(KafkaProducer):
     def publish_event(self, data=None, encoding=DEFAULT_PRODUCER_ENCODING):   # pylint: disable=R0201
         """Publish an event to a Kafka Topic.
 
+        The event will be str and look like this:
+        "timestamp=1664046446.939104&make=Ford&model=F-150&position=1&
+            position=2&position=3&speed=85.6&vin=ABCDEF0123456789J"
+
         Parameters:
             data (dict): The event to publish.
             encoding (str): The encoding of the data.
@@ -100,7 +104,7 @@ class HTTPServer(KafkaProducer):
             None.
         """
 
-        self.__app.run(host=self.host, port=self.port)
+        self.__app.run(host=self.ingress, port=self.http_port)
 
     def stop(self):     # pylint: disable=R0201
         """Stop the server.

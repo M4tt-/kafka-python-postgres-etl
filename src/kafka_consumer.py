@@ -14,7 +14,7 @@ from kafka import KafkaConsumer    # pylint: disable=E0611
 import psycopg
 
 from constants import (DEFAULT_PRODUCER_ENCODING,
-                       TABLE_DIAG_COLUMNS,
+                       STREAM_TABLE_NAME,
 )
 
 # %% CONSTANTS
@@ -26,7 +26,7 @@ from constants import (DEFAULT_PRODUCER_ENCODING,
 class Consumer(KafkaConsumer):
     """Consume messages from Kafka topic and send to data store."""
 
-    def __init__(self, **consumer_kwargs, **pg_kwargs):
+    def __init__(self, consumer_kwargs, pg_kwargs):
         """Constructor.
 
         Parameters:
@@ -70,7 +70,7 @@ class Consumer(KafkaConsumer):
             print(f"Exiting\n{self.count} messages consumed.")
 
 
-    def push_to_pg(self, cursor=None, message):
+    def push_to_pg(self, message, cursor=None):
         """Push a message to Postgres.
 
         Parameters:
@@ -87,7 +87,7 @@ class Consumer(KafkaConsumer):
             with conn.cursor() as cur:
 
                 # Execute a command: this creates a new table
-                columns = ",".join(col for col in TABLE_DIAG_COLUMNS)
+                columns = ",".join(col for col in STREAM_TABLE_NAME)
                 #values = 
                 insertion = f"INSERT INTO {self.ds_table} ({columns}) VALUES "
                 cur.execute("""CREATE TABLE test (

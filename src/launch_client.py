@@ -17,9 +17,18 @@ From the command line::
 # %% IMPORTS
 
 import argparse
+import time
 
 from app.http_client import HTTPClient
-
+from constants import (DEFAULT_HTTP_PORT,
+                       DEFAULT_URL_RULE,
+                       STREAM_METRIC_MAKE,
+                       STREAM_METRIC_MODEL,
+                       STREAM_METRIC_POS,
+                       STREAM_METRIC_SPEED,
+                       STREAM_METRIC_TIME,
+                       STREAM_METRIC_VIN
+)
 # %% CONSTANTS
 
 NUM_REQUESTS = 1
@@ -37,9 +46,17 @@ def main(args):
         None.
     """
 
-    client = HTTPClient(server=args.server, port=args.port, rule=args.rule)
+    client = HTTPClient(http_server=args.server,
+                        http_port=args.port,
+                        http_rule=args.rule)
     for _ in range(NUM_REQUESTS):
-        client.send()
+        results = {STREAM_METRIC_TIME: time.time(),
+                   STREAM_METRIC_MAKE: 'Ford',
+                   STREAM_METRIC_MODEL: 'F-150',
+                   STREAM_METRIC_POS: (1,2,3),
+                   STREAM_METRIC_SPEED: 85.6,
+                   STREAM_METRIC_VIN: 'ABCDEF0123456789J'}
+        client.send(data=results)
 
 
 if __name__ == '__main__':
@@ -50,10 +67,10 @@ if __name__ == '__main__':
                         default='localhost')
     parser.add_argument('--port',
                         help='Server port, e.g., 5000',
-                        deafult=5000)
+                        default=DEFAULT_HTTP_PORT)
     parser.add_argument('--rule',
                         help='Server rule, e.g., events',
-                        default='events')
+                        default=DEFAULT_URL_RULE)
     parsed_args = parser.parse_args()
 
     main(parsed_args)

@@ -22,24 +22,24 @@ class HTTPClient:
     """Basic HTTP Client."""
 
     def __init__(self,
-                 server=None,             #FIXME: change this to http_server
-                 port=DEFAULT_HTTP_PORT,  #FIXME: change this to http_port
-                 rule=DEFAULT_URL_RULE):  #FIXME: change this to http_rule
+                 http_server=None,
+                 http_port=DEFAULT_HTTP_PORT,
+                 http_rule=DEFAULT_URL_RULE):
         """Constructor.
 
         Parameters:
-            server (str): The HTTP server to communicate with.
-            port (int): The port.
-            rule (str): The rule (page) to make requests to.
+            http_server (str): The HTTP server to communicate with.
+            http_port (int): The port.
+            http_rule (str): The rule (page) to make requests to.
 
         Returns:
             None.
         """
 
-        self.server = server
-        self.port = port
-        self.rule = rule
-        self.url = f'http://{self.server}:{self.port}/{self.rule}'
+        self.http_server = http_server
+        self.http_port = http_port
+        self.http_rule = http_rule
+        self.url = f'http://{self.http_server}:{self.http_port}/{self.http_rule}'
 
     def send(self, data=None):
         """Send data payload to the server.

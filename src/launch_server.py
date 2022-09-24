@@ -11,7 +11,7 @@ Usage
 -----
 
 From the command line::
-    python launch_server.py --host 0.0.0.0 --port 5000 --topic test_topic --bootstrap_servers localhost:9092
+    python launch_server.py --ingress 0.0.0.0 --port 5000 --topic test_topic --bootstrap_servers localhost:9092
 """
 
 # %% IMPORTS
@@ -35,15 +35,15 @@ def main(args):
 
     consumer_kwargs = {'bootstrap_servers': args.bootstrap_servers,
                        'topic': args.topic}
-    app = HTTPServer(host=args.host, port=args.port, **consumer_kwargs)
+    app = HTTPServer(ingress=args.ingress, http_port=args.port, **consumer_kwargs)
     app.start()
 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='HTTPServer App')
-    parser.add_argument('--host',
-                        help='Server host, e.g., 0.0.0.0',
+    parser.add_argument('--ingress',
+                        help='Server host listener, e.g., 0.0.0.0',
                         default='0.0.0.0')
     parser.add_argument('--port',
                         help='Server port, e.g., 5000',
