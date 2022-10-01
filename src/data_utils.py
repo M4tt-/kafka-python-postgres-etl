@@ -81,23 +81,23 @@ class SqlQueryBuilder:
     """Builds SQL queries from various data structures."""
 
     @classmethod
-    def insert_from_dict(cls, dict=None, table=None):
+    def insert_from_dict(cls, ins_dict=None, table=None):
         """Format a dictionary into Sql insert string.
 
         The keys of the dictionary are the column names and the values are the
         values
 
         Parameters:
-            dict (dict): The dict to insert.
+            ins_dict (dict): The dict to insert.
             table (str): The table to insert into.
 
         Returns:
-            None.
+            str: The SQL INSERT string.
         """
 
         columns_str = "("
         values_str = "("
-        for key, value in dict.items():
+        for key, value in ins_dict.items():
             columns_str += f"{key},"
             if isinstance(value, list):
                 if len(value) == 1:

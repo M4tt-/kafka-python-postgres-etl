@@ -9,14 +9,15 @@ This module contains example usage of KafkaConsumer from kafka-python.
 """
 
 # %% IMPORTS
+import psycopg
 
 from kafka import KafkaConsumer    # pylint: disable=E0611
-import psycopg
+
 
 from constants import (DEFAULT_PRODUCER_ENCODING,
                        STREAM_TABLE_NAME,
 )
-from data_utils import Formatter
+from data_utils import (Formatter, SqlQueryBuilder)
 
 # %% CONSTANTS
 
@@ -50,7 +51,7 @@ class Consumer(KafkaConsumer):
         self.ds_id = pg_kwargs.get('ds_id', None)
         self.ds_user = pg_kwargs.get('ds_user', 'postgres')
         self.ds_password = pg_kwargs.get('ds_password', '7497')
-        self.ds_table = pg_kwargs.get('ds_table', None)
+        self.ds_table = pg_kwargs.get('ds_table', STREAM_TABLE_NAME)
         self.count = 0
         super().__init__(self.topic, bootstrap_servers=self.bootstrap_servers)
         assert self.bootstrap_connected()
@@ -67,14 +68,14 @@ class Consumer(KafkaConsumer):
                 for msg in self:
                     message = msg.value.decode(DEFAULT_PRODUCER_ENCODING)
                     message_dict = Formatter.deformat_url_query(message)
-                    print(message)
-                    print(type(message))
+                    print(message_dict)
+                    print(type(message_dict))
                     self.count += 1
         except KeyboardInterrupt:
             print(f"Exiting\n{self.count} messages consumed.")
 
 
-    def push_to_pg(self, message, cursor=None):
+    def push_to_pg(self, message):
         """Push a message to Postgres.
 
         Parameters:
@@ -85,10 +86,12 @@ class Consumer(KafkaConsumer):
         """
 
         # Form SQL statement
-        insert_statement = SqlQueryBuilder(dict=message, table=self.ds_table)
+        insert_statement = SqlQueryBuilder(ins_dict=message,
+                                           table=self.ds_table)
 
         # Connect to an existing database and write out the INSERT
-        conn_str = f"dbname={self.ds_id} user={self.ds_user} password={self.ds_password}"
-        with psycopg.connect(conn_str) as conn:
+        conn_str = f"dbname={self.ds_id} user={self.ds_user}" \
+                   f"password={self.ds_password}"
+        with psycopg.connect(conn_str) as conn:  # pylint: disable=E1129
             with conn.cursor() as cur:
                 cur.execute(insert_statement)

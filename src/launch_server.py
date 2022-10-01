@@ -11,7 +11,8 @@ Usage
 -----
 
 From the command line::
-    python launch_server.py --ingress 0.0.0.0 --port 5000 --topic test_topic --bootstrap_servers localhost:9092
+    python launch_server.py --ingress 0.0.0.0 --port 5000 --topic test_topic
+         --bootstrap_servers localhost:9092
 """
 
 # %% IMPORTS
