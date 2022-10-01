@@ -33,7 +33,21 @@ class Formatter:
             str: The formatted data label.
         """
 
-        return parse_qs(query_string, **kwargs)
+        parsed_dict = parse_qs(query_string, **kwargs)
+
+        # Remove any quotes
+        final_parsed_dict = {}
+        for key, value in parsed_dict.items():
+            new_key = key.replace('"', '').replace("'","")
+            if isinstance(value, list):
+                new_value = []
+                for subvalue in value:
+                    new_subvalue = subvalue.replace('"', '').replace("'","")
+                    new_value.append(new_subvalue)
+            else:
+                new_value = value.replace('"', '').replace("'","")
+            final_parsed_dict[new_key] = new_value
+        return final_parsed_dict
 
     @classmethod
     def format_data_label(cls, data_label=None, sub=DEFAULT_REPLACEMENT_CHAR):
@@ -119,7 +133,4 @@ class SqlQueryBuilder:
         columns_str = columns_str[0:-1] + ")"
         values_str = values_str[0:-1] + ")"
         insert_str = f"INSERT INTO {table} {columns_str} VALUES {values_str}"
-        print(columns_str)
-        print(values_str)
-        print(insert_str)
         return insert_str

@@ -68,8 +68,7 @@ class Consumer(KafkaConsumer):
                 for msg in self:
                     message = msg.value.decode(DEFAULT_PRODUCER_ENCODING)
                     message_dict = Formatter.deformat_url_query(message)
-                    print(message_dict)
-                    print(type(message_dict))
+                    self.push_to_pg(message_dict)
                     self.count += 1
         except KeyboardInterrupt:
             print(f"Exiting\n{self.count} messages consumed.")
@@ -86,12 +85,12 @@ class Consumer(KafkaConsumer):
         """
 
         # Form SQL statement
-        insert_statement = SqlQueryBuilder(ins_dict=message,
-                                           table=self.ds_table)
+        ins_statement = SqlQueryBuilder.insert_from_dict(ins_dict=message,
+                                                         table=self.ds_table)
 
         # Connect to an existing database and write out the INSERT
         conn_str = f"dbname={self.ds_id} user={self.ds_user}" \
-                   f"password={self.ds_password}"
+                   f" password={self.ds_password}"
         with psycopg.connect(conn_str) as conn:  # pylint: disable=E1129
             with conn.cursor() as cur:
-                cur.execute(insert_statement)
+                cur.execute(ins_statement)

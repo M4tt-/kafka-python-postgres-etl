@@ -61,7 +61,7 @@ export PGPASSWORD=$PG_PASSWORD
 psql -U $PG_USER -tc "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'" | grep -q 1 || psql -U $PG_USER -c "CREATE DATABASE $DB_NAME"
 
 # Create the table within the database if it doesn't exist
-SCHEMA="(id integer PRIMARY KEY, timestamp float, vin varchar(17), make varchar(20), model varchar(20), position_x float, position_y float, position_z float, speed float)"
+SCHEMA="(id serial PRIMARY KEY, timestamp float, vin char(17), make varchar(20), model varchar(20), position_x float, position_y float, position_z float, speed float)"
 CREATE_TBL_CMD="CREATE TABLE IF NOT EXISTS $TABLE $SCHEMA;"
 psql -U $PG_USER -d $DB_NAME -c "$CREATE_TBL_CMD"
 
