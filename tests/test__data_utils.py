@@ -130,7 +130,7 @@ class TestSqlQueryBuilder:
         test_table = "av_streaming"
         expected_result = f"INSERT INTO {test_table} (field1,field2,field3)" \
                           f" VALUES ('value1','value2','value3')"
-        actual_result = SqlQueryBuilder.insert_from_dict(dict=test_obj,
+        actual_result = SqlQueryBuilder.insert_from_dict(ins_dict=test_obj,
                                                          table=test_table)
         assert expected_result == actual_result
 
@@ -151,7 +151,7 @@ class TestSqlQueryBuilder:
                           f"'(0.004990763058979908,2.4563888155285308e-05," \
                           f"0.004508130855317203)',2.134912508024945," \
                           f"'GD9KE1GANAGOCJ64E')"
-        actual_result = SqlQueryBuilder.insert_from_dict(dict=test_obj,
+        actual_result = SqlQueryBuilder.insert_from_dict(ins_dict=test_obj,
                                                          table=test_table)
         assert expected_result == actual_result
 
@@ -173,6 +173,6 @@ class TestSqlQueryBuilder:
                           f"0.004990763058979908,2.4563888155285308e-05," \
                           f"0.004508130855317203,2.134912508024945," \
                           f"'GD9KE1GANAGOCJ64E')"
-        actual_result = SqlQueryBuilder.insert_from_dict(dict=test_obj,
+        actual_result = SqlQueryBuilder.insert_from_dict(ins_dict=test_obj,
                                                          table=test_table)
         assert expected_result == actual_result
