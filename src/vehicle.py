@@ -18,7 +18,9 @@ from constants import (DEFAULT_HTTP_PORT,
                        DEFAULT_URL_RULE,
                        STREAM_METRIC_MAKE,
                        STREAM_METRIC_MODEL,
-                       STREAM_METRIC_POS,
+                       STREAM_METRIC_POS_X,
+                       STREAM_METRIC_POS_Y,
+                       STREAM_METRIC_POS_Z,
                        STREAM_METRIC_SPEED,
                        STREAM_METRIC_TIME,
                        STREAM_METRIC_VIN
@@ -142,7 +144,9 @@ class Vehicle(HTTPClient):
         results = {STREAM_METRIC_TIME: time.time(),
                    STREAM_METRIC_MAKE: self.make,
                    STREAM_METRIC_MODEL: self.model,
-                   STREAM_METRIC_POS: position,
+                   STREAM_METRIC_POS_X: position[0],
+                   STREAM_METRIC_POS_Y: position[1],
+                   STREAM_METRIC_POS_Z: position[2],
                    STREAM_METRIC_SPEED: speed,
                    STREAM_METRIC_VIN: self.vin}
         return self.send(data=results)

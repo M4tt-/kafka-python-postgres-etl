@@ -16,6 +16,7 @@ import psycopg
 from constants import (DEFAULT_PRODUCER_ENCODING,
                        STREAM_TABLE_NAME,
 )
+from data_utils import Formatter
 
 # %% CONSTANTS
 
@@ -47,6 +48,8 @@ class Consumer(KafkaConsumer):
                                                      "localhost:9092")
         self.ds_server = pg_kwargs.get('ds_server', None)
         self.ds_id = pg_kwargs.get('ds_id', None)
+        self.ds_user = pg_kwargs.get('ds_user', 'postgres')
+        self.ds_password = pg_kwargs.get('ds_password', '7497')
         self.ds_table = pg_kwargs.get('ds_table', None)
         self.count = 0
         super().__init__(self.topic, bootstrap_servers=self.bootstrap_servers)
@@ -63,6 +66,7 @@ class Consumer(KafkaConsumer):
             while True:
                 for msg in self:
                     message = msg.value.decode(DEFAULT_PRODUCER_ENCODING)
+                    message_dict = Formatter.deformat_url_query(message)
                     print(message)
                     print(type(message))
                     self.count += 1
@@ -74,24 +78,17 @@ class Consumer(KafkaConsumer):
         """Push a message to Postgres.
 
         Parameters:
-            message (str): The message to send. Expected to be 
+            message (dict): The message to send.
 
         Returns:
             None.
         """
 
-        # Connect to an existing database
-        with psycopg.connect(f"dbname={self.ds_id} user=postgres password=7497") as conn:
+        # Form SQL statement
+        insert_statement = SqlQueryBuilder(dict=message, table=self.ds_table)
 
-            # Open a cursor to perform database operations
+        # Connect to an existing database and write out the INSERT
+        conn_str = f"dbname={self.ds_id} user={self.ds_user} password={self.ds_password}"
+        with psycopg.connect(conn_str) as conn:
             with conn.cursor() as cur:
-
-                # Execute a command: this creates a new table
-                columns = ",".join(col for col in STREAM_TABLE_NAME)
-                #values = 
-                insertion = f"INSERT INTO {self.ds_table} ({columns}) VALUES "
-                cur.execute("""CREATE TABLE test (
-                        id serial PRIMARY KEY,
-                        num integer,
-                        data text)
-                        """)
+                cur.execute(insert_statement)
