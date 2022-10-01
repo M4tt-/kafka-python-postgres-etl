@@ -32,4 +32,4 @@ jobs:
       run: |
         export PYTHONPATH=.
         export PYTEST_CONFIG=tests/test_config_ci.json
-        pytest -v
+        pytest --ignore=tests/test__http_comms.py --ignore=tests/test__vehicle.py -v
