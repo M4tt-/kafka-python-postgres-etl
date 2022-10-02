@@ -43,7 +43,9 @@ if [ -z ${KAFKA_DIR+x} ]; then
 fi
 
 # Stop Kafka Server
-cd $KAFKA_DIR && bin/kafka-server-stop.sh
+cd $KAFKA_DIR && bin/kafka-server-stop.sh &
+
+sleep 10
 
 # Stop Zookeeper
 cd $KAFKA_DIR && bin/zookeeper-server-stop.sh
