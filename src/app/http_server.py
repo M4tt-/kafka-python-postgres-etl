@@ -36,7 +36,6 @@ class HTTPServer(KafkaProducer):
         """Constructor.
 
         Parameters:
-<<<<<<< HEAD
             consumer_kwargs (dict): Dict of kwargs to pass to KafkaConsumer
                                     __init__.
                                     bootstrap_servers: str
@@ -44,12 +43,6 @@ class HTTPServer(KafkaProducer):
             ingress (str): The hostname to listen on.
             http_port (int): The port.
             http_rule (str): The default rule endpoint for event processing.
-=======
-            bootstrap_servers (str): The Kafka server:port.
-            host (str): The hostname to listen on.
-            port (int): The port.
-            rule (str): The default rule endpoint for event processing.
->>>>>>> Intermediate commit, gonna rebase and merge
 
         Returns:
             None.
@@ -82,11 +75,7 @@ class HTTPServer(KafkaProducer):
             if not event_data:
                 return 'Invalid event type or format!', 400
 
-<<<<<<< HEAD
             return self.publish_event(data=event_data)
-=======
-            return self.publish_event(data=event_data, topic='test_topic')
->>>>>>> Intermediate commit, gonna rebase and merge
         return None
 
     def publish_event(self, data=None, encoding=DEFAULT_PRODUCER_ENCODING):   # pylint: disable=R0201
