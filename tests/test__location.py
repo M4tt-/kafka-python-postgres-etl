@@ -60,7 +60,8 @@ class TestLocation:
         x2 = my_location.x_of_t
         assert isinstance(x1, float)
         assert isinstance(x2, float)
-        assert x1 != x2
+        if my_location.vx != 0:
+            assert x1 != x2
 
     def test_05_compute_y_of_t(self, my_location):
         """Ensure Location.y_of_t is changing over time."""
@@ -69,7 +70,8 @@ class TestLocation:
         x2 = my_location.y_of_t
         assert isinstance(x1, float)
         assert isinstance(x2, float)
-        assert x1 != x2
+        if my_location.vy != 0:
+            assert x1 != x2
 
     def test_06_compute_z_of_t(self, my_location):
         """Ensure Location.z_of_t is changing over time."""
@@ -78,7 +80,8 @@ class TestLocation:
         x2 = my_location.z_of_t
         assert isinstance(x1, float)
         assert isinstance(x2, float)
-        assert x1 != x2
+        if my_location.vz != 0:
+            assert x1 != x2
 
     def test_07_get_time(self, my_location):
         """Ensure get_time() is an increasing function."""
