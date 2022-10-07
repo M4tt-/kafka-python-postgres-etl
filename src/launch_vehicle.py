@@ -22,14 +22,6 @@ import time
 from vehicle import Vehicle
 from constants import (DEFAULT_HTTP_PORT,
                        DEFAULT_URL_RULE,
-                       STREAM_METRIC_MAKE,
-                       STREAM_METRIC_MODEL,
-                       STREAM_METRIC_POS_X,
-                       STREAM_METRIC_POS_Y,
-                       STREAM_METRIC_POS_Z,
-                       STREAM_METRIC_SPEED,
-                       STREAM_METRIC_TIME,
-                       STREAM_METRIC_VIN
 )
 # %% CONSTANTS
 
