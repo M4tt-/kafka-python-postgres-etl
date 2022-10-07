@@ -16,6 +16,7 @@ import time
 
 from constants import (DEFAULT_HTTP_PORT,
                        DEFAULT_URL_RULE,
+                       DEFAULT_VEHICLE_REPORT_DELAY,
                        STREAM_METRIC_MAKE,
                        STREAM_METRIC_MODEL,
                        STREAM_METRIC_POS_X,
@@ -87,6 +88,7 @@ class Vehicle(HTTPClient):
         self.make = make
         self.model = model
         self.auto_start = auto_start
+        self.driving = False
         self.gps = Location()
         if auto_start:
             self.start_trip()
@@ -120,6 +122,9 @@ class Vehicle(HTTPClient):
         """
 
         self.gps.start_trip()
+        self.driving = True
+        #while self.driving:
+
 
     # -------------------------------------------------------------------------
     def stop_trip(self):
@@ -130,6 +135,7 @@ class Vehicle(HTTPClient):
         """
 
         self.gps.stop_trip()
+        self.driving = False
 
     # -------------------------------------------------------------------------
     def report(self):
