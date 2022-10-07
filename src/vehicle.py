@@ -12,6 +12,7 @@ This module contains a class that produces simulated data from a vehicle.
 # %% IMPORTS
 import random
 import string
+import threading
 import time
 
 from constants import (DEFAULT_HTTP_PORT,
@@ -26,7 +27,7 @@ from constants import (DEFAULT_HTTP_PORT,
                        STREAM_METRIC_TIME,
                        STREAM_METRIC_VIN
 )
-from http_client import HTTPClient    # pylint: disable=C0411
+from app.http_client import HTTPClient    # pylint: disable=C0411
 from location import Location
 
 # %% CONSTANTS
@@ -54,7 +55,7 @@ def generate_vin():
 # %% CLASSES
 
 
-class Vehicle(HTTPClient):
+class Vehicle(threading.Thread):
     """A vehicle that can stream its own performance metrics."""
 
     # -------------------------------------------------------------------------
@@ -62,9 +63,8 @@ class Vehicle(HTTPClient):
                  http_server=None,
                  http_port=DEFAULT_HTTP_PORT,
                  http_rule=DEFAULT_URL_RULE,
-                 vin=generate_vin(),
                  make=DEFAULT_MAKE,
-                 model=random.choice(MODEL_CHOICES),
+                 model=None,
                  auto_start=False):
         """Constructor.
 
@@ -81,14 +81,20 @@ class Vehicle(HTTPClient):
             Vehicle: instance.
         """
 
-        super().__init__(http_server=http_server,
-                         http_port=http_port,
-                         http_rule=http_rule)
-        self.vin = vin
+        super().__init__(daemon=True)
+        with threading.Lock():
+            self.vin = generate_vin()
         self.make = make
-        self.model = model
+        if model is not None:
+            self.model = model
+        else:
+            with threading.Lock():
+                self.model = random.choice(MODEL_CHOICES)
         self.auto_start = auto_start
         self.driving = False
+        self.http_client = HTTPClient(http_server=http_server,
+                                      http_port=http_port,
+                                      http_rule=http_rule)
         self.gps = Location()
         if auto_start:
             self.start_trip()
@@ -123,8 +129,7 @@ class Vehicle(HTTPClient):
 
         self.gps.start_trip()
         self.driving = True
-        #while self.driving:
-
+        self.start()
 
     # -------------------------------------------------------------------------
     def stop_trip(self):
@@ -155,4 +160,19 @@ class Vehicle(HTTPClient):
                    STREAM_METRIC_POS_Z: position[2],
                    STREAM_METRIC_SPEED: speed,
                    STREAM_METRIC_VIN: self.vin}
-        return self.send(data=results)
+        return self.http_client.send(data=results)
+
+    # -------------------------------------------------------------------------
+    def run(self):
+        """Main thread loop.
+
+        Returns:
+            None.
+        """
+
+        while True:
+            if self.driving:
+                self.report()
+                time.sleep(DEFAULT_VEHICLE_REPORT_DELAY)
+            else:
+                break
