@@ -68,6 +68,7 @@ class Consumer(KafkaConsumer):
                 for msg in self:
                     message = msg.value.decode(DEFAULT_PRODUCER_ENCODING)
                     message_dict = Formatter.deformat_url_query(message)
+                    print(message_dict)
                     self.push_to_pg(message_dict)
                     self.count += 1
         except KeyboardInterrupt:
