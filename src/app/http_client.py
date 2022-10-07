@@ -12,6 +12,7 @@ This module contains a class ``HTTPClient`` to make HTTP requests.
 import requests
 
 from constants import (DEFAULT_HTTP_PORT,
+                       DEFAULT_HTTP_TIMEOUT,
                        DEFAULT_URL_RULE
 )
 
@@ -53,7 +54,9 @@ class HTTPClient:
 
         if data is None:
             data = "Dummy post."
-        response = requests.post(self.url, data=data)
+        response = requests.post(self.url,
+                                 data=data,
+                                 timeout=DEFAULT_HTTP_TIMEOUT)
         return response
 
     def get(self):
