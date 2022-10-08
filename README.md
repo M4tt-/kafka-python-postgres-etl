@@ -8,6 +8,24 @@
 - The web server should send the raw data to a data store (ELT)
 - The web server should use the Kafka Streams API to process the data into a uniform format before sending it to SQL (ETL)
 
+## Containers
+
+- Network:
+  - docker network create av_telemetry --driver bridge
+
+- Zookeeper [docker pull bitnami/zookeeper]
+  - Usage: sudo docker run --name av-zookeeper -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper:latest
+  - Future Usage: docker run --name av-zookeeper --restart always -d -v $(pwd)/zoo.cfg:/conf/zoo.cfg zookeeper
+  - Using bridge: docker run -d --name av-zookeeper --network av_telemetry -e ALLOW_ANONYMOUS_LOGIN=yes zookeeper:latest
+
+  - Can create a zookeeper config file zoo.cfg
+
+- Kafka
+  - Link to Zookeeper: docker run -d --name kafka-server --network av_telemetry \
+    -e ALLOW_PLAINTEXT_LISTENER=yes \
+    -e KAFKA_CFG_ZOOKEEPER_CONNECT=av-zookeeper:2181 \
+    bitnami/kafka:latest
+
 ## Getting Started
 
 1. Ensure you are using the right environment (Python 3.6 w/ requirements.txt satisfied).
