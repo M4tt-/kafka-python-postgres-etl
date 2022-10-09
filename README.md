@@ -11,20 +11,28 @@
 ## Containers
 
 - Network:
-  - docker network create av_telemetry --driver bridge
+  - sudo docker network create av_telemetry --driver bridge
 
-- Zookeeper [docker pull bitnami/zookeeper]
+- Zookeeper [sudo docker pull bitnami/zookeeper]
   - Usage: sudo docker run --name av-zookeeper -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper:latest
-  - Future Usage: docker run --name av-zookeeper --restart always -d -v $(pwd)/zoo.cfg:/conf/zoo.cfg zookeeper
-  - Using bridge: docker run -d --name av-zookeeper --network av_telemetry -e ALLOW_ANONYMOUS_LOGIN=yes zookeeper:latest
+  - Future Usage: sudo docker run --name av-zookeeper --restart always -d -v $(pwd)/zoo.cfg:/conf/zoo.cfg zookeeper
+  - Using bridge: sudo docker run -d --name av-zookeeper --restart always --network av_telemetry -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper
 
   - Can create a zookeeper config file zoo.cfg
 
 - Kafka
-  - Link to Zookeeper: docker run -d --name kafka-server --network av_telemetry \
+  - Link to Zookeeper: sudo docker run -d -p 9092:9092 --name kafka-server --network av_telemetry \
     -e ALLOW_PLAINTEXT_LISTENER=yes \
     -e KAFKA_CFG_ZOOKEEPER_CONNECT=av-zookeeper:2181 \
     bitnami/kafka:latest
+
+    Need -p option to expose container port 9092 to host 9092 so KafkaProducer can subscribe to it
+  
+
+  - Create the topic:
+      sudo docker exec -it kafka-server sh
+      cd opt/bitnami/kafka/bin
+      kafka-topics.sh --bootstrap-server localhost:9092 --create --topic test_topic
 
 ## Getting Started
 
