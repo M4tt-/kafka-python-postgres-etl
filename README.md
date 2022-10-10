@@ -16,7 +16,7 @@
 - Zookeeper [sudo docker pull bitnami/zookeeper]
   - Usage: sudo docker run --name av-zookeeper -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper:latest
   - Future Usage: sudo docker run --name av-zookeeper --restart always -d -v $(pwd)/zoo.cfg:/conf/zoo.cfg zookeeper
-  - Using bridge: sudo docker run -d --name av-zookeeper --restart always --network av_telemetry -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper
+  - Using bridge: sudo docker run -d -p 2181:2181 --name av-zookeeper --restart always --network av_telemetry -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper
 
   - Can create a zookeeper config file zoo.cfg
 
@@ -33,6 +33,29 @@
       sudo docker exec -it kafka-server sh
       cd opt/bitnami/kafka/bin
       kafka-topics.sh --bootstrap-server localhost:9092 --create --topic test_topic
+  - List topics:
+      kafka-topics.sh --bootstrap-server localhost:9092 --list
+
+- http_server / vkafka_producer container:
+  sudo docker run -p 5000:5000 --network av_telemetry m4ttl33t/    data-science-pipelines:http_server
+
+
+- Login to docker
+sudo docker login
+
+
+- Build docker image
+sudo docker build -t m4ttl33t/data-science-pipelines:http_server .
+
+- Run docker image
+sudo docker run m4ttl33t/data-science-pipelines:http_server
+
+- Push docker image
+sudo docker image push m4ttl33t/data-science-pipelines:http_server
+
+
+Build the http server kafka producer container:
+ sudo docker build -t http_kafka_producer:0.0.1 .
 
 ## Getting Started
 

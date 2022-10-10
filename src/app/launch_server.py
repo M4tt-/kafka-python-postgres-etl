@@ -19,7 +19,7 @@ From the command line::
 
 import argparse
 
-from app.http_server import HTTPServer
+from http_server import HTTPServer
 
 # %% FUNCTIONS
 

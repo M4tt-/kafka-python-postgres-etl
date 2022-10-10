@@ -14,14 +14,17 @@ from flask import request, Flask
 
 from kafka import KafkaProducer
 
-from constants import (DEFAULT_HTTP_LISTENER,
-                       DEFAULT_HTTP_PORT,
-                       DEFAULT_PRODUCER_ENCODING,
-                       DEFAULT_URL_RULE
-)
+# from constants import (DEFAULT_HTTP_LISTENER,
+#                        DEFAULT_HTTP_PORT,
+#                        DEFAULT_PRODUCER_ENCODING,
+#                        DEFAULT_URL_RULE
+# )
 
 # %% CONSTANTS
-
+DEFAULT_HTTP_LISTENER = "0.0.0.0"
+DEFAULT_HTTP_PORT = 5000
+DEFAULT_PRODUCER_ENCODING = "utf-8"
+DEFAULT_URL_RULE = "events"
 # %% CLASSES
 
 
