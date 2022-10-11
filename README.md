@@ -16,13 +16,14 @@
 - Zookeeper [sudo docker pull bitnami/zookeeper]
   - Usage: sudo docker run --name av-zookeeper -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper:latest
   - Future Usage: sudo docker run --name av-zookeeper --restart always -d -v $(pwd)/zoo.cfg:/conf/zoo.cfg zookeeper
-  - Using bridge: sudo docker run -d -p 2181:2181 --name av-zookeeper --restart always --network av_telemetry -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper
+  - Using bridge: sudo docker run -p 2181:2181 --name av-zookeeper --restart always --network av_telemetry -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper
 
   - Can create a zookeeper config file zoo.cfg
 
 - Kafka
   - Link to Zookeeper: sudo docker run -d -p 9092:9092 --name kafka-server --network av_telemetry \
     -e ALLOW_PLAINTEXT_LISTENER=yes \
+    -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 \
     -e KAFKA_CFG_ZOOKEEPER_CONNECT=av-zookeeper:2181 \
     bitnami/kafka:latest
 
@@ -31,14 +32,18 @@
 
   - Create the topic:
       sudo docker exec -it kafka-server sh
-      cd opt/bitnami/kafka/bin
-      kafka-topics.sh --bootstrap-server localhost:9092 --create --topic test_topic
+      cd opt/bitnami/kafka
+      bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic test_topic
   - List topics:
-      kafka-topics.sh --bootstrap-server localhost:9092 --list
+      bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+  - List brokers:
+      bin/zookeeper-shell.sh localhost:2181 ls /brokers/ids
+  - Create producer
+      bin/kafka-console-producer.sh --topic test_topic --bootstrap-server kafka-server:9092
+      
 
-- http_server / vkafka_producer container:
-  sudo docker run -p 5000:5000 --network av_telemetry m4ttl33t/    data-science-pipelines:http_server
-
+- http_server / kafka_producer container:
+  sudo docker run -p 5000:5000 --name kafka-producer --network av_telemetry m4ttl33t/    data-science-pipelines:http_server
 
 - Login to docker
 sudo docker login

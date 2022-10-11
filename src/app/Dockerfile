@@ -25,4 +25,4 @@ COPY launch_server.py .
 EXPOSE $http_port  
 
 # command to run on container start
-CMD [ "python", "./launch_server.py", "--port", "$http_port"] 
+CMD [ "python", "./launch_server.py", "--port", "5000"] 

@@ -54,7 +54,7 @@ if __name__ == '__main__':
                         default='test_topic')
     parser.add_argument('--bootstrap_servers',
                         help='Kafka bootstrap_servers',
-                        default='localhost:9092')
+                        default='kafka-server:9092')
     parsed_args = parser.parse_args()
 
     main(parsed_args)
