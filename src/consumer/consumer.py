@@ -74,7 +74,6 @@ class Consumer(KafkaConsumer):
         except KeyboardInterrupt:
             print(f"Exiting\n{self.count} messages consumed.")
 
-
     def push_to_pg(self, message):
         """Push a message to Postgres.
 
