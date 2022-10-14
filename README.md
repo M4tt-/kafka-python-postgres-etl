@@ -43,13 +43,16 @@
       
 
 - http_server / kafka_producer container:
-  sudo docker run -p 5000:5000 --name kafka-producer --network av_telemetry m4ttl33t/data-science-pipelines:http_server
+  sudo docker run -p 5000:5000 --name kafka-producer --network av_telemetry m4ttl33t/producer:0.0.1
 
 - postgres container:
   ensure local postgres service is stopped with sudo service postgresql stop
-  sudo docker run -p 5432:5432 --name postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres
+  sudo docker run -p 5432:5432 --name postgres --network av_telemetry -e POSTGRES_PASSWORD=mysecretpassword -d postgres
   Interact with:
       psql -h localhost -p 5432 -U postgres
+
+- consumer container:
+  sudo docker run --name kafka-consumer --network av_telemetry consumer
 
 - Login to docker
 sudo docker login

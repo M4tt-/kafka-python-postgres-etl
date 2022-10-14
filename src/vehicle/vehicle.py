@@ -27,11 +27,12 @@ from constants import (DEFAULT_HTTP_PORT,
                        STREAM_METRIC_TIME,
                        STREAM_METRIC_VIN
 )
-from app.http_client import HTTPClient    # pylint: disable=C0411
+from http_client import HTTPClient    # pylint: disable=C0411
 from location import Location
 
 # %% CONSTANTS
 
+CONFIG_FILE = "config.json"
 DEFAULT_MAKE = 'Ford'
 MODEL_CHOICES = ['Maverick', 'Escape', 'F-150', 'Explorer', 'Mustang',
                  'Bronco', 'Edge', 'Expedition']
@@ -59,45 +60,54 @@ class Vehicle(threading.Thread):
     """A vehicle that can stream its own performance metrics."""
 
     # -------------------------------------------------------------------------
-    def __init__(self,
-                 http_server=None,
-                 http_port=DEFAULT_HTTP_PORT,
-                 http_rule=DEFAULT_URL_RULE,
-                 make=DEFAULT_MAKE,
-                 model=None,
-                 auto_start=False):
-        """Constructor.
-
-        Parameters:
-            http_server (str): The HTTP server to communicate with.
-            http_port (int): The port.
-            http_rule (str): The rule (page) to make requests to.
-            vin (str): The vehicle identification number.
-            make (str): The make of the vehicle.
-            model (str): The model of the vehicle.
-            auto_start (bool): If True, start the vehicle trip.
-
-        Returns:
-            Vehicle: instance.
-        """
+    def __init__(self):
+        """Constructor."""
 
         super().__init__(daemon=True)
         with threading.Lock():
             self.vin = generate_vin()
         self.make = make
-        if model is not None:
-            self.model = model
-        else:
+        self.get_config()
+        if self.model is None:
             with threading.Lock():
                 self.model = random.choice(MODEL_CHOICES)
-        self.auto_start = auto_start
         self.driving = False
-        self.http_client = HTTPClient(http_server=http_server,
-                                      http_port=http_port,
-                                      http_rule=http_rule)
+        self.http_client = HTTPClient(http_server=self.http_server,
+                                      http_port=self.http_port,
+                                      http_rule=self.http_rule)
         self.gps = Location()
-        if auto_start:
+        if self.auto_start:
             self.start_trip()
+
+    # -------------------------------------------------------------------------
+    def get_config(self):
+        """Try to get configuration details through various, prioritized means.
+
+        Priority 1: Check for environment variables.
+        Priority 2: Check default config file.
+
+        Returns:
+            None.
+        """
+
+        def get_env_var(key):
+            try:
+                var = os.environ[key]
+            except KeyError:
+                with open(CONFIG_FILE, 'r') as config:
+                    try:
+                        var = json.load(config)[key]
+                    except KeyError:
+                        return None
+            return var
+            print(f"Sourced env var: {var}")
+
+        self.http_server = get_env_var('HTTP_SERVER')
+        self.http_port = get_env_var('HTTP_PORT')
+        self.http_rule = get_env_var('HTTP_RULE')
+        self.make = get_env_var('VEHICLE_MAKE')
+        self.model = get_env_var('VEHICLE_MODEL')
+        self.auto_start = get_env_var('AUTO_START')
 
     # -------------------------------------------------------------------------
     def get_position(self):

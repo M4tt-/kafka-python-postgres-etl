@@ -1,0 +1,9 @@
+{
+    "KAFKA_TOPIC": "test_topic",
+    "KAFKA_SERVER": "kafka-server",
+    "PG_SERVER": "postgres",
+    "PG_DB": "av_telemetry",
+    "PG_USER": "postgres",
+    "PG_PASSWORD": "mysecretpassword",
+    "PG_TABLE": "diag"
+}
