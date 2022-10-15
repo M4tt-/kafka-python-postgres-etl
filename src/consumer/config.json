@@ -1,6 +1,6 @@
 {
     "KAFKA_TOPIC": "test_topic",
-    "KAFKA_SERVER": "kafka-server",
+    "KAFKA_SERVER": "kafka-server:9092",
     "PG_SERVER": "postgres",
     "PG_DB": "av_telemetry",
     "PG_USER": "postgres",

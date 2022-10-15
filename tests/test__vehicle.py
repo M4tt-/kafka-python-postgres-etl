@@ -30,7 +30,7 @@ from constants import (ENV_VAR_CONFIG,
                        PROCESS_INIT_DELAY,
                        PROCESS_KILL_DELAY
 )
-from http_server import HTTPServer
+from producer import Producer
 from vehicle import (generate_vin,
                      Vehicle,
                      VIN_LEN)
@@ -64,17 +64,17 @@ def my_vehicle(config):
     vehicle.stop_trip()
 
 @pytest.fixture(scope='module')
-def my_http_server(config):
-    """HTTPServer to use for testing."""
-    return HTTPServer(ingress=config.get("host"),
+def my_producer(config):
+    """Producer to use for testing."""
+    return Producer(ingress=config.get("host"),
                       http_port=config.get("port"),
                       http_rule=config.get("rule"))
 
 @pytest.fixture(autouse=True, scope='module')
-def server_process(my_http_server):
-    """HTTPServer process object complete with teardown procedure."""
+def server_process(my_producer):
+    """Producer process object complete with teardown procedure."""
 
-    server_process = Process(target=my_http_server.start, daemon=True)
+    server_process = Process(target=my_producer.start, daemon=True)
     server_process.start()
     time.sleep(PROCESS_INIT_DELAY)
     yield server_process

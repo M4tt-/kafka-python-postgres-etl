@@ -21,9 +21,11 @@
   - Can create a zookeeper config file zoo.cfg
 
 - Kafka
-  - Link to Zookeeper: sudo docker run -d -p 9092:9092 --name kafka-server --network av_telemetry \
+  - Link to Zookeeper: sudo docker run -p 9092:9092 -p 29092:29092 --name kafka-server --network av_telemetry \
     -e ALLOW_PLAINTEXT_LISTENER=yes \
-    -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 \
+    -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
+    -e KAFKA_LISTENERS=PLAINTEXT://kafka-server:9092,PLAINTEXT_HOST://localhost:29092 \
+    -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-server:9092,PLAINTEXT_HOST://localhost:29092 \
     -e KAFKA_CFG_ZOOKEEPER_CONNECT=av-zookeeper:2181 \
     bitnami/kafka:latest
 
@@ -43,7 +45,7 @@
       
 
 - http_server / kafka_producer container:
-  sudo docker run -p 5000:5000 --name kafka-producer --network av_telemetry m4ttl33t/producer:0.0.1
+  sudo docker run -p 5000:5000 --name kafka-producer -e PYTHONUNBUFFERED=1 --network av_telemetry m4ttl33t/producer:0.0.1
 
 - postgres container:
   ensure local postgres service is stopped with sudo service postgresql stop
@@ -52,7 +54,10 @@
       psql -h localhost -p 5432 -U postgres
 
 - consumer container:
-  sudo docker run --name kafka-consumer --network av_telemetry consumer
+  sudo docker run --name kafka-consumer -e PYTHONUNBUFFERED=1 --network av_telemetry m4ttl33t/consumer:0.0.1
+
+- vehicle container:
+  sudo docker run --name vehicle -e PYTHONUNBUFFERED=1 --network av_telemetry m4ttl33t/vehicle:0.0.1
 
 - Login to docker
 sudo docker login

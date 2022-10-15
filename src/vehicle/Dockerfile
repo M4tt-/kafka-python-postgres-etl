@@ -9,11 +9,11 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # copy the content of the local src directory to the working directory
-COPY config.json .
 COPY location.py .
 COPY vehicle.py .
 COPY launch_vehicle.py .
-COPY http_client .
+COPY http_client.py .
+COPY config.json .
 
 # command to run on container start
 CMD [ "python", "./launch_vehicle.py"]

@@ -57,8 +57,8 @@ class Producer(KafkaProducer):
                         var = json.load(config)[key]
                     except KeyError:
                         return None
-            return var
             print(f"Sourced env var: {var}")
+            return var
 
         self.kafka_topic = get_env_var('KAFKA_TOPIC')
         self.kafka_server = get_env_var('KAFKA_SERVER')
@@ -74,6 +74,7 @@ class Producer(KafkaProducer):
         """
 
         if request.method in ['GET']:
+            print("Got GET request!")
             return "Welcome to HTTPServer!"
 
         if request.method in ['POST']:
@@ -102,6 +103,7 @@ class Producer(KafkaProducer):
         """
 
         event = json.dumps(data)
+        print(f"Publishing event: {event}")
         self.send(self.kafka_topic, bytearray(event.encode(encoding)))
         return event
 

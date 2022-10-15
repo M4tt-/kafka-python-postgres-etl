@@ -1,5 +1,5 @@
 {
-    "HTTP_SERVER": "producer",
+    "HTTP_SERVER": "172.18.0.1",
     "HTTP_PORT": 5000,
     "HTTP_RULE": "events",
     "VEHICLE_MAKE": null,

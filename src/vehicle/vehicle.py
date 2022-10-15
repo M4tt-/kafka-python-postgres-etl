@@ -10,30 +10,33 @@ This module contains a class that produces simulated data from a vehicle.
 """
 
 # %% IMPORTS
+
+import json
+import os
 import random
 import string
-import threading
 import time
 
-from constants import (DEFAULT_HTTP_PORT,
-                       DEFAULT_URL_RULE,
-                       DEFAULT_VEHICLE_REPORT_DELAY,
-                       STREAM_METRIC_MAKE,
-                       STREAM_METRIC_MODEL,
-                       STREAM_METRIC_POS_X,
-                       STREAM_METRIC_POS_Y,
-                       STREAM_METRIC_POS_Z,
-                       STREAM_METRIC_SPEED,
-                       STREAM_METRIC_TIME,
-                       STREAM_METRIC_VIN
-)
 from http_client import HTTPClient    # pylint: disable=C0411
 from location import Location
 
 # %% CONSTANTS
 
 CONFIG_FILE = "config.json"
+DEFAULT_HTTP_PORT = 5000
 DEFAULT_MAKE = 'Ford'
+DEFAULT_VEHICLE_REPORT_DELAY = 3     # seconds
+DEFAULT_URL_RULE = "events"
+STREAM_DATABASE = 'av_streaming'
+STREAM_METRIC_ID = "id"
+STREAM_METRIC_MAKE = "make"
+STREAM_METRIC_MODEL = "model"
+STREAM_METRIC_POS_X = "position_x"
+STREAM_METRIC_POS_Y = "position_y"
+STREAM_METRIC_POS_Z = "position_z"
+STREAM_METRIC_SPEED = "speed"
+STREAM_METRIC_TIME = "timestamp"
+STREAM_METRIC_VIN = "vin"
 MODEL_CHOICES = ['Maverick', 'Escape', 'F-150', 'Explorer', 'Mustang',
                  'Bronco', 'Edge', 'Expedition']
 VIN_LEN = 17
@@ -52,25 +55,20 @@ def generate_vin():
         vin += random.choice(string.ascii_uppercase + string.digits)
     return vin
 
-
 # %% CLASSES
 
 
-class Vehicle(threading.Thread):
+class Vehicle:
     """A vehicle that can stream its own performance metrics."""
 
     # -------------------------------------------------------------------------
     def __init__(self):
         """Constructor."""
 
-        super().__init__(daemon=True)
-        with threading.Lock():
-            self.vin = generate_vin()
-        self.make = make
+        self.vin = generate_vin()
         self.get_config()
         if self.model is None:
-            with threading.Lock():
-                self.model = random.choice(MODEL_CHOICES)
+            self.model = random.choice(MODEL_CHOICES)
         self.driving = False
         self.http_client = HTTPClient(http_server=self.http_server,
                                       http_port=self.http_port,
@@ -99,8 +97,8 @@ class Vehicle(threading.Thread):
                         var = json.load(config)[key]
                     except KeyError:
                         return None
-            return var
             print(f"Sourced env var: {var}")
+            return var
 
         self.http_server = get_env_var('HTTP_SERVER')
         self.http_port = get_env_var('HTTP_PORT')
@@ -139,7 +137,7 @@ class Vehicle(threading.Thread):
 
         self.gps.start_trip()
         self.driving = True
-        self.start()
+        self.run()
 
     # -------------------------------------------------------------------------
     def stop_trip(self):
@@ -174,7 +172,7 @@ class Vehicle(threading.Thread):
 
     # -------------------------------------------------------------------------
     def run(self):
-        """Main thread loop.
+        """Main loop.
 
         Returns:
             None.

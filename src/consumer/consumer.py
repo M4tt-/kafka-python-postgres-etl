@@ -31,6 +31,7 @@ class Consumer(KafkaConsumer):
     def __init__(self):
         """Constructor."""
 
+        self.count = 0
         self.get_config()
         super().__init__(self.kafka_topic, bootstrap_servers=self.kafka_server)
 
@@ -53,8 +54,8 @@ class Consumer(KafkaConsumer):
                         var = json.load(config)[key]
                     except KeyError:
                         return None
-            return var
             print(f"Sourced env var: {var}")
+            return var
 
         self.kafka_topic = get_env_var('KAFKA_TOPIC')
         self.kafka_server = get_env_var('KAFKA_SERVER')

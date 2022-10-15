@@ -9,10 +9,10 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # copy the content of the local src directory to the working directory
-COPY config.json .
 COPY consumer.py .
 COPY launch_consumer.py .
 COPY utils ./utils
+COPY config.json .
 
 # command to run on container start
 CMD [ "python", "./launch_consumer.py"]
