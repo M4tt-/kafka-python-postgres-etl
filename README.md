@@ -19,6 +19,9 @@
   - Using bridge: sudo docker run -p 2181:2181 --name av-zookeeper --network av_telemetry -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper
 
   - Can create a zookeeper config file zoo.cfg
+    sudo docker exec -it av-zookeeper bash
+    cd opt/bitnami/zookeeper/conf
+
 
 - Kafka
   - Link to Zookeeper: sudo docker run -p 9092:9092 -p 29092:29092 --name kafka-server --network av_telemetry \
@@ -30,6 +33,11 @@
     bitnami/kafka:latest
 
     Need -p option to expose container port 9092 to host 9092 so KafkaProducer can subscribe to it
+    The KAFKA_ADVERTISED_LISTENERS is an important var for networking: clients connecting to the broker
+    will use these values as connection strings.
+    PLAINTEXT_HOST group refers to local connections running on same host or docker container.
+    PLAINTEXT group refers to external clients.
+    Thus, the 'localhost' has no relevance to PLAINTEXT groups, only PLAINTEXT_HOST.
 
 - Kafka (to act as producer)
   - Link to Zookeeper: sudo docker run -p 9091:9091 -p 29091:29091 --name kafka-producer --network av_telemetry \
@@ -60,8 +68,10 @@
   ensure local postgres service is stopped with sudo service postgresql stop
   sudo docker run -p 5432:5432 --name postgres --network av_telemetry -e POSTGRES_PASSWORD=mysecretpassword -d postgres
   Interact with:
-      docker exec -it -u postgres postgres bash
+      sudo docker exec -it -u postgres postgres bash
       psql
+      \c av_telemetry
+      SELECT * FROM diag;
 
 - consumer container:
   sudo docker run --name kafka-consumer -e PYTHONUNBUFFERED=1 --network av_telemetry m4ttl33t/consumer:0.0.1
