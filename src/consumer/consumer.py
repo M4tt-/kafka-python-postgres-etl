@@ -34,6 +34,8 @@ class Consumer(KafkaConsumer):
         self.count = 0
         self.get_config()
         super().__init__(self.kafka_topic, bootstrap_servers=self.kafka_server)
+        print(f"bootstrap_connected: {self.bootstrap_connected()}")
+        print(f"subscriptions: {self.subscription()}")
 
     def get_config(self):
         """Try to get configuration details through various, prioritized means.
@@ -54,12 +56,13 @@ class Consumer(KafkaConsumer):
                         var = json.load(config)[key]
                     except KeyError:
                         return None
-            print(f"Sourced env var: {var}")
+            print(f"Sourced env var {key}: {var}")
             return var
 
         self.kafka_topic = get_env_var('KAFKA_TOPIC')
         self.kafka_server = get_env_var('KAFKA_SERVER')
         self.pg_server = get_env_var('PG_SERVER')
+        self.pg_port = get_env_var('PG_PORT')
         self.pg_db = get_env_var('PG_DB')
         self.pg_user = get_env_var('PG_USER')
         self.pg_password = get_env_var('PG_PASSWORD')
@@ -98,8 +101,10 @@ class Consumer(KafkaConsumer):
                                                          table=self.pg_table)
 
         # Connect to an existing database and write out the INSERT
-        conn_str = f"dbname={self.pg_db} user={self.pg_user}" \
-                   f" password={self.pg_password}"
+        conn_str = f"host={self.pg_server} port={self.pg_port} " \
+                   f"dbname={self.pg_db} user={self.pg_user} " \
+                   f"password={self.pg_password}"
+        print(f"conn_str: {conn_str}")
         with psycopg.connect(conn_str) as conn:  # pylint: disable=E1129
             with conn.cursor() as cur:
                 cur.execute(ins_statement)

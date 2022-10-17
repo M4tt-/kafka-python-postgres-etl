@@ -30,14 +30,23 @@
     bitnami/kafka:latest
 
     Need -p option to expose container port 9092 to host 9092 so KafkaProducer can subscribe to it
-  
+
+- Kafka (to act as producer)
+  - Link to Zookeeper: sudo docker run -p 9091:9091 -p 29091:29091 --name kafka-producer --network av_telemetry \
+    -e ALLOW_PLAINTEXT_LISTENER=yes \
+    -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
+    -e KAFKA_LISTENERS=PLAINTEXT://kafka-producer:9091,PLAINTEXT_HOST://localhost:29091 \
+    -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-producer:9091,PLAINTEXT_HOST://localhost:29091 \
+    -e KAFKA_CFG_ZOOKEEPER_CONNECT=av-zookeeper:2181 \
+    bitnami/kafka:latest
+
 
   - Create the topic:
       sudo docker exec -it kafka-server sh
       cd opt/bitnami/kafka
-      bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic test_topic
+      bin/kafka-topics.sh --bootstrap-server localhost:29092 --create --topic test_topic
   - List topics:
-      bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+      bin/kafka-topics.sh --bootstrap-server localhost:29092 --list
   - List brokers:
       bin/zookeeper-shell.sh localhost:2181 ls /brokers/ids
   - Create producer
@@ -51,7 +60,8 @@
   ensure local postgres service is stopped with sudo service postgresql stop
   sudo docker run -p 5432:5432 --name postgres --network av_telemetry -e POSTGRES_PASSWORD=mysecretpassword -d postgres
   Interact with:
-      psql -h localhost -p 5432 -U postgres
+      docker exec -it -u postgres postgres bash
+      psql
 
 - consumer container:
   sudo docker run --name kafka-consumer -e PYTHONUNBUFFERED=1 --network av_telemetry m4ttl33t/consumer:0.0.1

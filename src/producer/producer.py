@@ -33,6 +33,8 @@ class Producer(KafkaProducer):
         self.get_config()
         super().__init__(bootstrap_servers=self.kafka_server)
 
+        print(f"bootstrap_connected: {self.bootstrap_connected()}")
+
         self.__app = Flask(__name__)
         self.__app.add_url_rule(rule=f'/{self.http_rule}',
                                 methods=['GET', 'POST'],
@@ -57,7 +59,7 @@ class Producer(KafkaProducer):
                         var = json.load(config)[key]
                     except KeyError:
                         return None
-            print(f"Sourced env var: {var}")
+            print(f"Sourced env var {key}: {var}")
             return var
 
         self.kafka_topic = get_env_var('KAFKA_TOPIC')
@@ -123,4 +125,4 @@ class Producer(KafkaProducer):
             None.
         """
 
-        return None
+        self.close()   # Close KafkaProducer

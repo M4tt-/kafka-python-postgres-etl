@@ -97,7 +97,7 @@ class Vehicle:
                         var = json.load(config)[key]
                     except KeyError:
                         return None
-            print(f"Sourced env var: {var}")
+            print(f"Sourced env var {key}: {var}")
             return var
 
         self.http_server = get_env_var('HTTP_SERVER')

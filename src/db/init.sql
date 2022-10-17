@@ -1,7 +1,8 @@
 -- Setup the PG database and table
 -- Author: mrunyon
 
-CREATE DATABASE av_telemetry;
+SELECT 'CREATE DATABASE av_telemetry' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'av_telemetry')\gexec
+--CREATE DATABASE av_telemetry;
 \c av_telemetry;
 CREATE TABLE diag
 (id serial PRIMARY KEY,
