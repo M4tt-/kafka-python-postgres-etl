@@ -1,0 +1,9 @@
+{
+    "DOCKER_NETWORK": "av_telemetry",
+    "ZOOKEEPER_NAME": "zookeeper",
+    "ZOOKEEPER_PORT_MAP": "2181:2181",
+    "KAFKA_NAME": "kafka-server",
+    "KAFKA_EXTERNAL_PORT_MAP": "9092:9092",
+    "KAFKA_INTERNAL_PORT_MAP": "29092:29092",
+    "KAFKA_TOPIC": "test_topic"
+}
