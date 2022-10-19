@@ -19,7 +19,7 @@ from utils.data_utils import (Formatter, SqlQueryBuilder)
 
 # %% CONSTANTS
 
-CONFIG_FILE = "config.json"
+CONFIG_FILE = "config.consumer"
 DEFAULT_PRODUCER_ENCODING = "utf-8"
 
 # %% CLASSES
@@ -59,14 +59,17 @@ class Consumer(KafkaConsumer):
             print(f"Sourced env var {key}: {var}")
             return var
 
+        kafka_name = get_env_var('KAFKA_NAME')
+        kafka_port_map = get_env_var('KAFKA_EXTERNAL_PORT_MAP')
+        kafka_server = f"{kafka_name}:{kafka_port_map.split(':')[1]}"
+        self.kafka_server = kafka_server
         self.kafka_topic = get_env_var('KAFKA_TOPIC')
-        self.kafka_server = get_env_var('KAFKA_SERVER')
-        self.pg_server = get_env_var('PG_SERVER')
-        self.pg_port = get_env_var('PG_PORT')
-        self.pg_db = get_env_var('PG_DB')
-        self.pg_user = get_env_var('PG_USER')
-        self.pg_password = get_env_var('PG_PASSWORD')
-        self.pg_table = get_env_var('PG_TABLE')
+        self.pg_server = get_env_var('POSTGRES_NAME')
+        self.pg_port = get_env_var('POSTGRES_PORT_MAP').split(':')[1]
+        self.pg_db = get_env_var('POSTGRES_DB')
+        self.pg_user = get_env_var('POSTGRES_USER')
+        self.pg_password = get_env_var('POSTGRES_PASSWORD')
+        self.pg_table = get_env_var('POSTGRES_TABLE')
 
     def start(self):
         """Start consuming messages from the topic.
