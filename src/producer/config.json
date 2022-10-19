@@ -1,7 +1,0 @@
-{
-    "KAFKA_TOPIC": "test_topic",
-    "KAFKA_SERVER": "kafka-server:9092",
-    "INGRESS_LISTENER": "0.0.0.0",
-    "INGRESS_PORT": 5000,
-    "HTTP_RULE": "events"
-}

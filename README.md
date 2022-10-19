@@ -51,7 +51,7 @@
 
   - Create the topic:
       sudo docker exec -it kafka-server sh
-      cd opt/bitnami/kafka
+      cd /opt/bitnami/kafka
       bin/kafka-topics.sh --bootstrap-server localhost:29092 --create --topic test_topic
   - List topics:
       bin/kafka-topics.sh --bootstrap-server localhost:29092 --list

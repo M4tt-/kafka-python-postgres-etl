@@ -1,9 +1,24 @@
 {
+    "CONSUMER_NAME": "consumer",
+    "CONSUMER_INIT_WAIT": 1,
     "DOCKER_NETWORK": "av_telemetry",
-    "ZOOKEEPER_NAME": "zookeeper",
-    "ZOOKEEPER_PORT_MAP": "2181:2181",
     "KAFKA_NAME": "kafka-server",
     "KAFKA_EXTERNAL_PORT_MAP": "9092:9092",
     "KAFKA_INTERNAL_PORT_MAP": "29092:29092",
-    "KAFKA_TOPIC": "test_topic"
+    "KAFKA_INIT_WAIT": 7,
+    "KAFKA_TOPIC": "test_topic",
+    "POSTGRES_NAME": "postgres",
+    "POSTGRES_INIT_WAIT": 1,
+    "POSTGRES_USER": "postgres",
+    "POSTGRES_PASSWORD": "mysecretpassword",
+    "POSTGRES_PORT_MAP": "5432:5432",
+    "PRODUCER_NAME": "producer",
+    "PRODUCER_HTTP_RULE": "events",
+    "PRODUCER_INGRESS_HTTP_LISTENER": "0.0.0.0",
+    "PRODUCER_PORT_MAP": "5000:5000",
+    "PRODUCER_INIT_WAIT": 3,
+    "SEMVER_TAG": "0.0.1",
+    "ZOOKEEPER_NAME": "zookeeper",
+    "ZOOKEEPER_PORT_MAP": "2181:2181",
+    "ZOOKEEPER_INIT_WAIT": 7
 }

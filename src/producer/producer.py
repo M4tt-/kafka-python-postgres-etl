@@ -18,7 +18,7 @@ from kafka import KafkaProducer
 
 # %% CONSTANTS
 
-CONFIG_FILE = "config.json"
+CONFIG_FILE = "config.producer"
 DEFAULT_PRODUCER_ENCODING = "utf-8"
 
 # %% CLASSES
@@ -62,10 +62,13 @@ class Producer(KafkaProducer):
             print(f"Sourced env var {key}: {var}")
             return var
 
+        kafka_name = get_env_var('KAFKA_NAME')
+        kafka_port_map = get_env_var('KAFKA_EXTERNAL_PORT_MAP')
+        kafka_server = f"{kafka_name}:{kafka_port_map.split(':')[1]}"
+        self.kafka_server = kafka_server
         self.kafka_topic = get_env_var('KAFKA_TOPIC')
-        self.kafka_server = get_env_var('KAFKA_SERVER')
-        self.ingress_listener = get_env_var('INGRESS_LISTENER')
-        self.ingress_port = get_env_var('INGRESS_PORT')
+        self.ingress_listener = get_env_var('INGRESS_HTTP_LISTENER')
+        self.ingress_port = get_env_var('INGRESS_HTTP_PORT')
         self.http_rule = get_env_var('HTTP_RULE')
 
     def process_event(self):   # pylint: disable=R0201
