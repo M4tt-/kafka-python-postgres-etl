@@ -53,8 +53,6 @@ class HTTPClient:
 
         if data is None:
             data = "Dummy post."
-        print(f"Sending POST request to {self.url}:")
-        print(data)
         response = requests.post(self.url,
                                  data=data,
                                  timeout=DEFAULT_HTTP_TIMEOUT)

@@ -5,12 +5,10 @@
     "KAFKA_NAME": "kafka-server",
     "KAFKA_EXTERNAL_PORT_MAP": "9092:9092",
     "KAFKA_INTERNAL_PORT_MAP": "29092:29092",
-    "KAFKA_INIT_WAIT": 7,
+    "KAFKA_INIT_WAIT": 6,
     "KAFKA_TOPIC": "test_topic",
-    "POSTGRES_DB": "av_telemetry",
     "POSTGRES_NAME": "postgres",
     "POSTGRES_INIT_WAIT": 1,
-    "POSTGRES_TABLE": "diag",
     "POSTGRES_USER": "postgres",
     "POSTGRES_PASSWORD": "mysecretpassword",
     "POSTGRES_PORT_MAP": "5432:5432",
@@ -22,5 +20,5 @@
     "SEMVER_TAG": "0.0.1",
     "ZOOKEEPER_NAME": "zookeeper",
     "ZOOKEEPER_PORT_MAP": "2181:2181",
-    "ZOOKEEPER_INIT_WAIT": 7
+    "ZOOKEEPER_INIT_WAIT": 6
 }

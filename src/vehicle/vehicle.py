@@ -22,12 +22,10 @@ from location import Location
 
 # %% CONSTANTS
 
-CONFIG_FILE = "config.json"
+CONFIG_FILE = "config.vehicle"
 DEFAULT_HTTP_PORT = 5000
 DEFAULT_MAKE = 'Ford'
 DEFAULT_VEHICLE_REPORT_DELAY = 3     # seconds
-DEFAULT_URL_RULE = "events"
-STREAM_DATABASE = 'av_streaming'
 STREAM_METRIC_ID = "id"
 STREAM_METRIC_MAKE = "make"
 STREAM_METRIC_MODEL = "model"
@@ -67,13 +65,17 @@ class Vehicle:
 
         self.vin = generate_vin()
         self.get_config()
+        if self.make is None:
+            self.make = DEFAULT_MAKE
         if self.model is None:
             self.model = random.choice(MODEL_CHOICES)
         self.driving = False
         self.http_client = HTTPClient(http_server=self.http_server,
                                       http_port=self.http_port,
                                       http_rule=self.http_rule)
-        self.gps = Location()
+        self.gps = Location(vx=self.velocity_x,
+                            vy=self.velocity_y,
+                            vz=self.velocity_z)
         if self.auto_start:
             self.start_trip()
 
@@ -97,15 +99,17 @@ class Vehicle:
                         var = json.load(config)[key]
                     except KeyError:
                         return None
-            print(f"Sourced env var {key}: {var}")
             return var
 
-        self.http_server = get_env_var('HTTP_SERVER')
-        self.http_port = get_env_var('HTTP_PORT')
-        self.http_rule = get_env_var('HTTP_RULE')
+        self.http_server = get_env_var('PRODUCER_HTTP_SERVER')
+        self.http_port = get_env_var('PRODUCER_PORT_MAP').split(':')[1]
+        self.http_rule = get_env_var('PRODUCER_HTTP_RULE')
         self.make = get_env_var('VEHICLE_MAKE')
         self.model = get_env_var('VEHICLE_MODEL')
         self.auto_start = get_env_var('AUTO_START')
+        self.velocity_x = get_env_var('VEHICLE_VELOCITY_X')
+        self.velocity_y = get_env_var('VEHICLE_VELOCITY_Y')
+        self.velocity_z = get_env_var('VEHICLE_VELOCITY_Z')
 
     # -------------------------------------------------------------------------
     def get_position(self):

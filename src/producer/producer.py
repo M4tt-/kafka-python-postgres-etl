@@ -32,7 +32,6 @@ class Producer(KafkaProducer):
 
         self.get_config()
         super().__init__(bootstrap_servers=self.kafka_server)
-
         print(f"bootstrap_connected: {self.bootstrap_connected()}")
 
         self.__app = Flask(__name__)
@@ -59,7 +58,6 @@ class Producer(KafkaProducer):
                         var = json.load(config)[key]
                     except KeyError:
                         return None
-            print(f"Sourced env var {key}: {var}")
             return var
 
         kafka_name = get_env_var('KAFKA_NAME')
@@ -79,7 +77,6 @@ class Producer(KafkaProducer):
         """
 
         if request.method in ['GET']:
-            print("Got GET request!")
             return "Welcome to HTTPServer!"
 
         if request.method in ['POST']:
@@ -108,7 +105,6 @@ class Producer(KafkaProducer):
         """
 
         event = json.dumps(data)
-        print(f"Publishing event: {event}")
         self.send(self.kafka_topic, bytearray(event.encode(encoding)))
         return event
 

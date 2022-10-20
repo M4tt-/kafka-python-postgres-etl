@@ -56,7 +56,6 @@ class Consumer(KafkaConsumer):
                         var = json.load(config)[key]
                     except KeyError:
                         return None
-            print(f"Sourced env var {key}: {var}")
             return var
 
         kafka_name = get_env_var('KAFKA_NAME')
@@ -107,7 +106,6 @@ class Consumer(KafkaConsumer):
         conn_str = f"host={self.pg_server} port={self.pg_port} " \
                    f"dbname={self.pg_db} user={self.pg_user} " \
                    f"password={self.pg_password}"
-        print(f"conn_str: {conn_str}")
         with psycopg.connect(conn_str) as conn:  # pylint: disable=E1129
             with conn.cursor() as cur:
                 cur.execute(ins_statement)

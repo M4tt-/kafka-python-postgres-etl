@@ -17,7 +17,7 @@
 #    4. m4ttl33t/postgres: Postgres data store
 #    5. m4ttl33t/consumer: KafkaConsumer
 
-# Usage: see init.sh --help
+# Usage: see launch_infra.sh --help
 
 ###################################################
 # FUNCTION: HELP MENU                             #
@@ -41,11 +41,9 @@ help() {
     printf "  --kafka-wait: The delay to wait after Kafka is started in seconds.\n"
     printf "  --postgres-name: The name of the Postgres container.\n"
     printf "  --postgres-wait: The delay to wait after Postgres is started in seconds.\n"
-    printf "  --postgres-db: The name of the Postgres database to house the data.\n"
     printf "  --postgres-user: The name of the Postgres user.\n"
     printf "  --postgres-password: The name of the Postgres password.\n"
     printf "  --postgres-port-map: The Postgres port map, e.g., 5432:5432.\n"
-    printf "  --postgres-table: The Postgres table name to construct, e.g., diag.\n"
     printf "  --producer-name: The name of the KafkaProducer container.\n"
     printf "  --producer-http-rule: The http endpoint (URL suffix) for KafkaProducer (HTTP server).\n"
     printf "  --producer-ingress: The ingress listener of HTTP server, e.g., 0.0.0.0\n"
@@ -56,6 +54,39 @@ help() {
     printf "  --zookeeper-wait: The delay to wait after Zookeeper is started in seconds.\n"
 }
 
+###################################################
+# FUNCTION: CONFIG DUMP                           #
+###################################################
+
+dump_config() {
+
+    printf "\nSourced configuration (master):\n\n"
+    printf "CONSUMER_NAME: $CONSUMER_NAME\n"
+    printf "CONSUMER_INIT_WAIT: $CONSUMER_INIT_WAIT\n"
+    printf "DOCKER_NETWORK: $DOCKER_NETWORK\n"
+    printf "KAFKA_NAME: $KAFKA_NAME\n"
+    printf "KAFKA_EXTERNAL_PORT_MAP: $KAFKA_EXTERNAL_PORT_MAP\n"
+    printf "KAFKA_INTERNAL_PORT_MAP: $KAFKA_INTERNAL_PORT_MAP\n"
+    printf "KAFKA_INIT_WAIT: $KAFKA_INIT_WAIT\n"
+    printf "KAFKA_TOPIC: $KAFKA_TOPIC\n"
+    printf "POSTGRES_NAME: $POSTGRES_NAME\n"
+    printf "POSTGRES_INIT_WAIT: $POSTGRES_INIT_WAIT\n"
+    printf "POSTGRES_PASSWORD: $POSTGRES_PASSWORD\n"
+    printf "POSTGRES_PORT_MAP: $POSTGRES_PORT_MAP\n"
+    printf "POSTGRES_USER: $POSTGRES_USER\n"
+    printf "PRODUCER_NAME: $PRODUCER_NAME\n"
+    printf "PRODUCER_HTTP_RULE: $PRODUCER_HTTP_RULE\n"
+    printf "PRODUCER_INGRESS_HTTP_LISTENER: $PRODUCER_INGRESS_HTTP_LISTENER\n"
+    printf "PRODUCER_INIT_WAIT: $PRODUCER_INIT_WAIT\n"
+    printf "PRODUCER_PORT_MAP: $PRODUCER_PORT_MAP\n"
+    printf "SEMVER_TAG: $SEMVER_TAG\n"
+    printf "VERBOSITY: $VERBOSITY\n"
+    printf "ZOOKEEPER_NAME: $ZOOKEEPER_NAME\n"
+    printf "ZOOKEEPER_PORT_MAP: $ZOOKEEPER_PORT_MAP\n"
+    printf "ZOOKEEPER_INIT_WAIT: $ZOOKEEPER_INIT_WAIT\n\n"
+
+}
+
 ####################################################
 # CONFIG SOURCING FROM FILE                       #
 ###################################################
@@ -63,18 +94,15 @@ help() {
 CONSUMER_NAME=$(jq -r .CONSUMER_NAME config.master)
 CONSUMER_INIT_WAIT=$(jq -r .CONSUMER_INIT_WAIT config.master)
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
-PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE config.master)
 KAFKA_NAME=$(jq -r .KAFKA_NAME config.master)
 KAFKA_EXTERNAL_PORT_MAP=$(jq -r .KAFKA_EXTERNAL_PORT_MAP config.master)
 KAFKA_INTERNAL_PORT_MAP=$(jq -r .KAFKA_INTERNAL_PORT_MAP config.master)
 KAFKA_INIT_WAIT=$(jq -r .KAFKA_INIT_WAIT config.master)
 KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC config.master)
 POSTGRES_NAME=$(jq -r .POSTGRES_NAME config.master)
-POSTGRES_DB=$(jq -r .POSTGRES_DB config.master)
 POSTGRES_INIT_WAIT=$(jq -r .POSTGRES_INIT_WAIT config.master)
 POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD config.master)
 POSTGRES_PORT_MAP=$(jq -r .POSTGRES_PORT_MAP config.master)
-POSTGRES_TABLE=$(jq -r .POSTGRES_TABLE config.master)
 POSTGRES_USER=$(jq -r .POSTGRES_USER config.master)
 PRODUCER_NAME=$(jq -r .PRODUCER_NAME config.master)
 PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE config.master)
@@ -137,11 +165,6 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        --postgres-db)
-        POSTGRES_DB="$2"
-        shift # past argument
-        shift # past value
-        ;;
         --postgres-wait)
         POSTGRES_INIT_WAIT="$2"
         shift # past argument
@@ -154,11 +177,6 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         ;;
         --postgres-port-map)
         POSTGRES_PORT_MAP="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --postgres-table)
-        POSTGRES_TABLE="$2"
         shift # past argument
         shift # past value
         ;;
@@ -222,6 +240,11 @@ done
 ###################################################
 # MAIN                                            #
 ###################################################
+
+if [[ $VERBOSITY == 1 ]]
+then
+    dump_config
+fi
 
 ############ DOCKER NETWORK ############
 docker_networks=$(sudo docker network ls --format "{{.Name}}")
@@ -411,6 +434,7 @@ then
     http_port=$(echo "$PRODUCER_PORT_MAP" | cut -d":" -f2)
     sudo docker run -p "${PRODUCER_PORT_MAP}" --name "${PRODUCER_NAME}" \
     --network "${DOCKER_NETWORK}" \
+    -e PYTHONUNBUFFERED=1 \
     -e HTTP_RULE="$PRODUCER_HTTP_RULE" \
     -e KAFKA_NAME="$KAFKA_NAME" \
     -e KAFKA_EXTERNAL_PORT_MAP="$KAFKA_EXTERNAL_PORT_MAP" \
@@ -423,6 +447,7 @@ else
     http_port=$(echo "$PRODUCER_PORT_MAP" | cut -d":" -f2)
     sudo docker run -p "${PRODUCER_PORT_MAP}" --name "${PRODUCER_NAME}" \
     --network "${DOCKER_NETWORK}" \
+    -e PYTHONUNBUFFERED=1 \
     -e HTTP_RULE="$PRODUCER_HTTP_RULE" \
     -e KAFKA_NAME="$KAFKA_NAME" \
     -e KAFKA_EXTERNAL_PORT_MAP="$KAFKA_EXTERNAL_PORT_MAP" \
@@ -441,6 +466,7 @@ then
     printf "Obtaining external IP address of $PRODUCER_NAME ..."
     printf "$producer_ip\n"
 fi
+printf "HTTP Server is serving requests at $producer_ip:$http_port/$PRODUCER_HTTP_RULE\n\n"
 
 ############  CONSUMER INIT ############
 if [[ "$container_names" == *"$CONSUMER_NAME"* ]]
@@ -461,27 +487,25 @@ if [[ "$VERBOSITY" == 1 ]]
 then
     sudo docker run --name "${CONSUMER_NAME}" \
     --network "${DOCKER_NETWORK}" \
+    -e PYTHONUNBUFFERED=1 \
     -e KAFKA_NAME="$KAFKA_NAME" \
     -e KAFKA_EXTERNAL_PORT_MAP="$KAFKA_EXTERNAL_PORT_MAP" \
     -e KAFKA_TOPIC="$KAFKA_TOPIC" \
     -e POSTGRES_NAME="$POSTGRES_NAME" \
-    -e POSTGRES_DB="$POSTGRES_DB" \
     -e POSTGRES_USER="$POSTGRES_USER" \
     -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-    -e POSTGRES_TABLE="$POSTGRES_TABLE" \
-    -d m4ttl33t/consumer:"${SEMVER_TAG}"
+    m4ttl33t/consumer:"${SEMVER_TAG}"
 else
     sudo docker run --name "${CONSUMER_NAME}" \
     --network "${DOCKER_NETWORK}" \
+    -e PYTHONUNBUFFERED=1 \
     -e KAFKA_NAME="$KAFKA_NAME" \
     -e KAFKA_EXTERNAL_PORT_MAP="$KAFKA_EXTERNAL_PORT_MAP" \
     -e KAFKA_TOPIC="$KAFKA_TOPIC" \
     -e POSTGRES_NAME="$POSTGRES_NAME" \
-    -e POSTGRES_DB="$POSTGRES_DB" \
     -e POSTGRES_USER="$POSTGRES_USER" \
     -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-    -e POSTGRES_TABLE="$POSTGRES_TABLE" \
-    -d m4ttl33t/consumer:"${SEMVER_TAG}" >/dev/null
+    m4ttl33t/consumer:"${SEMVER_TAG}" >/dev/null
 fi
 
 printf "Waiting for KafkaConsumer initialization ..."

@@ -4,9 +4,7 @@
     "KAFKA_EXTERNAL_PORT_MAP": "9092:9092",
     "KAFKA_SERVER": "kafka-server:9092",
     "POSTGRES_NAME": "postgres",
-    "POSTGRES_PORT": 5432,
-    "POSTGRES_DB": "av_telemetry",
+    "POSTGRES_PORT_MAP": "5432:5432",
     "POSTGRES_USER": "postgres",
     "POSTGRES_PASSWORD": "mysecretpassword",
-    "POSTGRES_TABLE": "diag"
 }
