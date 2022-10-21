@@ -144,7 +144,7 @@ class Location:
 
         if isinstance(self.vx_calc, (int, float)):
             return self.vx_rand*self.vx_calc
-        if isinstance(self.vx_calc, Callable):
+        if isinstance(self.vx_calc, Callable):    # pylint: disable=W1116
             try:
                 return self.vx_calc(self.elapsed_time)
             except AttributeError:
@@ -167,7 +167,7 @@ class Location:
 
         if isinstance(self.vy_calc, (int, float)):
             return self.vy_rand*self.vy_calc
-        if isinstance(self.vy_calc, Callable):
+        if isinstance(self.vy_calc, Callable):    # pylint: disable=W1116
             try:
                 return self.vy_calc(self.elapsed_time)
             except AttributeError:
@@ -190,7 +190,7 @@ class Location:
 
         if isinstance(self.vz_calc, (int, float)):
             return self.vz_rand*self.vz_calc
-        if isinstance(self.vz_calc, Callable):
+        if isinstance(self.vz_calc, Callable):    # pylint: disable=W1116
             try:
                 return self.vz_calc(self.elapsed_time)
             except AttributeError:

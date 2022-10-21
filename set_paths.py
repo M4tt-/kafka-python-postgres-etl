@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jun 7 10:08:00 2021
-
-@author: runyon
+:author: runyon
 
 Description: Let Python's sys.path variable be sufficiently populated to run
              all code in this repository, regardless of where the user

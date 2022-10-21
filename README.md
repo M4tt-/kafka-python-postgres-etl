@@ -1,7 +1,6 @@
 # kafka-python-postgres-etl
 
-This project demonstrates a streaming ETL pipeline. It is containerized using
-Docker.
+This project demonstrates a containerized, Python-based, streaming ETL pipeline. It is written in Python 3.6 (see `requirements.txt`).
 
 The main goal is to monitor and store real-time streaming data from a fleet of vehicles.
 
@@ -50,7 +49,6 @@ that they are given the correct host address of the HTTP server, e.g., the `prod
 
 ## Testing
 
-
 ### End-to-End Tests
 
 If you've followed the instructions in the **Getting Started** section, there are a few things you can do to check
@@ -74,6 +72,8 @@ that things are working as expected:
 There are many unit tests contained in the `tests` folder. Navigate to the root repo folder and execute:
 
     python -m pytest tests -W ignore::DeprecationWarning -v
+
+To run these tests, one should have the correct Python environment, e.g., built from `requirements.txt` with Python 3.6
 
 ## Contributing
 

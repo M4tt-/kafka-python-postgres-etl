@@ -54,21 +54,27 @@ class Producer(KafkaProducer):
             try:
                 var = os.environ[key]
             except KeyError:
-                with open(CONFIG_FILE, 'r') as config:
-                    try:
+                print(os.getcwd())
+                try:
+                    with open(CONFIG_FILE, 'r') as config:
+                        try:
+                            var = json.load(config)[key]
+                        except KeyError:
+                            return None
+                except FileNotFoundError:
+                    with open(f"./src/producer/{CONFIG_FILE}", 'r') as config:
                         var = json.load(config)[key]
-                    except KeyError:
-                        return None
             return var
 
         kafka_name = get_env_var('KAFKA_NAME')
         kafka_port_map = get_env_var('KAFKA_EXTERNAL_PORT_MAP')
-        kafka_server = f"{kafka_name}:{kafka_port_map.split(':')[1]}"
+        kafka_port = kafka_port_map.split(':')[1]
+        kafka_server = f"{kafka_name}:{kafka_port}"
         self.kafka_server = kafka_server
         self.kafka_topic = get_env_var('KAFKA_TOPIC')
-        self.ingress_listener = get_env_var('INGRESS_HTTP_LISTENER')
-        self.ingress_port = get_env_var('INGRESS_HTTP_PORT')
-        self.http_rule = get_env_var('HTTP_RULE')
+        self.ingress_listener = get_env_var("PRODUCER_INGRESS_HTTP_LISTENER")
+        self.ingress_port = kafka_port
+        self.http_rule = get_env_var("PRODUCER_HTTP_RULE")
 
     def process_event(self):   # pylint: disable=R0201
         """Process a request.

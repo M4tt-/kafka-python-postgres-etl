@@ -45,7 +45,6 @@ def main():
     except KeyboardInterrupt:
         print("\n\nGracefully killing Vehicle trip ...")
         vehicle.driving = False
-        vehicle.join()
         print("Done.")
 
 
