@@ -15,6 +15,7 @@ Pull the master branch and navigate to repo root. Execute:
 
 ## Architecture
 
+![kafka-python-postgres-etl](img/kafka-python-postgres-etl_arch.JPG)
 
 
 ## Containers
