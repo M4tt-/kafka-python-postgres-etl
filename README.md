@@ -64,10 +64,10 @@ that things are working as expected:
 
 2. Interact with the postgres container directly through bash - you should see the entries grow every few seconds:
 
-    >sudo docker exec -it -u postgres postgres bash
-    >psql
-    >\c av_telemetry
-    >SELECT * FROM diag;
+        sudo docker exec -it -u postgres postgres bash
+        psql
+        \c av_telemetry
+        SELECT * FROM diag;
 
 ### Unit Tests
 
