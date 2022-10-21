@@ -46,7 +46,7 @@ A fleet of vehicles (clients) are realized by one or more of the following conta
 - [m4ttl33t/vehicle](https://hub.docker.com/r/m4ttl33t/vehicle) -- HTTP client that constantly streams its own data
 
 As of this revision, many of these containers can be instantiated on many different machines. The only requirement is
-that they are given the correct host address of the HTTP server to send requests to.
+that they are given the correct host address of the HTTP server, e.g., the `producer` container, to send requests to.
 
 ## Testing
 
@@ -62,14 +62,12 @@ that things are working as expected:
 
 >Example: 172.60.49.4:5000/events
 
-2. Interact with the postgres container directly through bash:
+2. Interact with the postgres container directly through bash - you should see the entries grow every few seconds:
 
-    sudo docker exec -it -u postgres postgres bash
-    psql
-    \c av_telemetry
-    SELECT * FROM diag;
-
-  You should see the entries grow every few seconds.
+    >sudo docker exec -it -u postgres postgres bash
+    >psql
+    >\c av_telemetry
+    >SELECT * FROM diag;
 
 ### Unit Tests
 
