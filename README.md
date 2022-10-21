@@ -10,8 +10,8 @@ Ensure a Docker daemon is running and there are no services occupying ports
 
 Pull the master branch and navigate to repo root. Execute:
 
-  ``$~/kafka-python-postgres-etl/bash launch_infra.sh``
-  ``$~/kafka-python-postgres-etl/bash launch_fleet.sh``
+  ``$bash launch_infra.sh``
+  ``$bash launch_fleet.sh``
 
 ## Architecture
 
