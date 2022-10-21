@@ -12,12 +12,12 @@ A Kafka consumer (`consumer.Consumer`) will consume the published JSON string fr
 ## Getting Started
 
 Ensure a Docker daemon is running and there are no services occupying ports
-9092, 5432, and 5000.
+9092, 5432, 2181, and 5000 (if these ports are not available, the host:container port mapping can be modified in `config.master`).
 
 Pull the master branch and navigate to repo root. Execute:
 
-  ``$bash launch_infra.sh``
-  ``$bash launch_fleet.sh``
+    $bash launch_infra.sh
+    $bash launch_fleet.sh
 
 ## Architecture
 
@@ -29,11 +29,11 @@ A dichotomy can be made of this project's components: server infrastructure (or 
 
 The server infrastructure has one or more of the following containers:
 
-- m4ttl33t/postgres:<tag> [PostgreSQL data store]
-- m4ttl33t/consumer:<tag> [Kafka Consumer / SQL writer]
-- m4ttl33t/producer:<tag> [Kafka Producer / HTTP server]
-- bitnami/kafka:latest [Kafka broker(s)]
-- bitnami/zookeeper:latest [Zookeeper to administrate Kafka brokers]
+- [m4ttl33t/postgres](https://hub.docker.com/r/m4ttl33t/postgres) -- PostgreSQL data store (small extension of official image)
+- [m4ttl33t/consumer](https://hub.docker.com/r/m4ttl33t/consumer) -- Kafka Consumer / SQL writer
+- [m4ttl33t/producer](https://hub.docker.com/r/m4ttl33t/producer)-- Kafka Producer / HTTP server
+- [bitnami/kafka:latest](https://hub.docker.com/r/bitnami/kafka) -- Kafka broker(s)
+- [bitnami/zookeeper:latest](https://hub.docker.com/r/bitnami/zookeeper) -- Zookeeper to administrate Kafka brokers
 
 As of this revision, this infrastructure is "single-node" and operates locally for demonstration purposes. Each container
 communicates over a Docker bridge network. Ideally, most (if not all) of this infrastructure should reside in the cloud across
@@ -43,7 +43,7 @@ several machines.
 
 A fleet of vehicles (clients) are realized by one or more of the following containers:
 
-- m4ttl33t/vehicle:<tag> [HTTP client that constantly streams its own data]
+- [m4ttl33t/vehicle](https://hub.docker.com/r/m4ttl33t/vehicle) -- HTTP client that constantly streams its own data
 
 As of this revision, many of these containers can be instantiated on many different machines. The only requirement is
 that they are given the correct host address of the HTTP server to send requests to.
@@ -60,21 +60,22 @@ that things are working as expected:
   increments every few seconds. Unless you've changed any `config.*` files, the port and endpoint is 5000 and 'events', respectively,
   and the IP address should be printed to stdout (or stored in `/tmp/launch_infra_http_server.log`).
 
-  Example: 172.60.49.4:5000/events
+>Example: 172.60.49.4:5000/events
 
 2. Interact with the postgres container directly through bash:
 
-  `sudo docker exec -it -u postgres postgres bash`
-  `psql`
-  `\c av_telemetry`
-  `SELECT * FROM diag;`
+    sudo docker exec -it -u postgres postgres bash
+    psql
+    \c av_telemetry
+    SELECT * FROM diag;
 
   You should see the entries grow every few seconds.
 
 ### Unit Tests
 
 There are many unit tests contained in the `tests` folder. Navigate to the root repo folder and execute:
-    ```python -m pytest tests -W ignore::DeprecationWarning -v```
+
+    python -m pytest tests -W ignore::DeprecationWarning -v
 
 ## Contributing
 
