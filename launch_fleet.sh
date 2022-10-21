@@ -133,6 +133,13 @@ fi
 
 container_names=$(sudo docker ps -a --format "{{.Names}}")
 
+if ! [[ "$NUM_VEHICLES" =~ ^[0-9]+$ ]]
+    then
+        printf "--num-vehicles must be integer. Exiting on 1 ..."
+        exit 1
+fi
+
+
 ############  VEHICLE INIT ############
 
 if [[ "$VERBOSITY" == 1 ]]
@@ -183,4 +190,3 @@ do
     fi
     printf "  Done.\n"
 done
-exit 0

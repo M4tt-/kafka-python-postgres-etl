@@ -87,6 +87,169 @@ dump_config() {
 
 }
 
+###################################################
+# FUNCTION: BRIDGE INIT                           #
+###################################################
+
+bridge_init() {
+
+    docker_networks=$(sudo docker network ls --format "{{.Name}}")
+    if ! [[ "$docker_networks" == *"$DOCKER_NETWORK"* ]]
+    then
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            sudo docker network create "$DOCKER_NETWORK" --driver bridge
+        else
+            sudo docker network create "$DOCKER_NETWORK" --driver bridge >/dev/null
+        fi
+
+        printf "Waiting for Docker Network $DOCKER_NETWORK creation ..."
+        sleep 0.5
+        printf "Done.\n\n"
+
+    else
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            printf "Docker network $DOCKER_NETWORK already exists.\n"
+        fi
+    fi
+
+}
+
+###################################################
+# FUNCTION: get_container_names                   #
+###################################################
+
+get_container_names() {
+
+    container_names=$(sudo docker ps -a --format "{{.Names}}")
+
+}
+
+###################################################
+# FUNCTION: KAFKA INIT                            #
+###################################################
+
+kafka_init() {
+
+    if [[ "$container_names" == *"$KAFKA_NAME"* ]]
+    then
+
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            printf "$KAFKA_NAME container already exists -- re-creating!\n"
+        fi
+
+        # Stop and remove Kafka container
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            sudo docker stop "$KAFKA_NAME"
+            sudo docker rm "$KAFKA_NAME"
+        else
+            sudo docker stop "$KAFKA_NAME">/dev/null
+            sudo docker rm "$KAFKA_NAME">/dev/null
+        fi
+    fi
+
+    # Parse the port map for container and host ports
+    kafka_int_cont_port=$(printf "${KAFKA_INTERNAL_PORT_MAP}" | cut -d":" -f1)
+    kafka_int_host_port=$(printf "${KAFKA_INTERNAL_PORT_MAP}" | cut -d":" -f2)
+    kafka_ext_cont_port=$(printf "${KAFKA_EXTERNAL_PORT_MAP}" | cut -d":" -f1)
+    kafka_ext_host_port=$(printf "${KAFKA_EXTERNAL_PORT_MAP}" | cut -d":" -f2)
+    zookeeper_cont_port=$(printf "${ZOOKEEPER_PORT_MAP}" | cut -d":" -f1)
+
+    # Start the Kafka container
+    if [[ "$VERBOSITY" == 1 ]]
+    then
+        sudo docker run -p "${KAFKA_INTERNAL_PORT_MAP}" \
+        -p "${KAFKA_EXTERNAL_PORT_MAP}" --name "$KAFKA_NAME" \
+        --network "$DOCKER_NETWORK" \
+        --restart unless-stopped \
+        -e ALLOW_PLAINTEXT_LISTENER=yes \
+        -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
+        -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${kafka_ext_cont_port}",PLAINTEXT_HOST://localhost:"${kafka_int_cont_port}" \
+        -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${kafka_ext_cont_port}",PLAINTEXT_HOST://localhost:"${kafka_int_cont_port}" \
+        -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${zookeeper_cont_port}" \
+        -d bitnami/kafka:latest
+    else
+        sudo docker run -p "${KAFKA_INTERNAL_PORT_MAP}" \
+        -p "${KAFKA_EXTERNAL_PORT_MAP}" --name "$KAFKA_NAME" \
+        --network "$DOCKER_NETWORK" \
+        --restart unless-stopped \
+        -e ALLOW_PLAINTEXT_LISTENER=yes \
+        -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
+        -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${kafka_ext_cont_port}",PLAINTEXT_HOST://localhost:"${kafka_int_cont_port}" \
+        -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${kafka_ext_cont_port}",PLAINTEXT_HOST://localhost:"${kafka_int_cont_port}" \
+        -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${zookeeper_cont_port}" \
+        -d bitnami/kafka:latest >/dev/null
+    fi
+
+    printf "Waiting for Kafka initialization ..."
+    sleep $KAFKA_INIT_WAIT
+    printf "Done.\n\n"
+
+    # Create the Kafka topic if it doesn't exist
+    kafka_topics=$(sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_int_cont_port --list && exit")
+    if ! [[ "$kafka_topics" == *"$KAFKA_TOPIC"* ]]
+    then
+        # Create the Kafka topic
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_int_cont_port --create --topic $KAFKA_TOPIC && exit"
+        else
+            sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_int_cont_port --create --topic $KAFKA_TOPIC && exit" >/dev/null
+        fi
+
+    else
+
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            printf "Kafka topic $KAFKA_TOPIC already exists -- skipping topic creation.\n"
+        fi
+    fi
+
+}
+
+###################################################
+# FUNCTION: ZOOKEEPER INIT                        #
+###################################################
+
+zookeeper_init() {
+
+    if [[ "$container_names" == *"$ZOOKEEPER_NAME"* ]]
+    then
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            printf "$ZOOKEEPER_NAME container already exists -- re-creating!\n"
+            sudo docker stop "$ZOOKEEPER_NAME"
+            sudo docker rm "$ZOOKEEPER_NAME"
+        else
+            sudo docker stop "$ZOOKEEPER_NAME" >/dev/null
+            sudo docker rm "$ZOOKEEPER_NAME" >/dev/null
+        fi
+    fi
+
+    # Start the zookeeper container
+    if [[ "$VERBOSITY" == 1 ]]
+    then
+        sudo docker run -p "$ZOOKEEPER_PORT_MAP" --name "$ZOOKEEPER_NAME" \
+        --network "$DOCKER_NETWORK" \
+        -e ALLOW_ANONYMOUS_LOGIN=yes \
+        -d bitnami/zookeeper:latest
+    else
+        sudo docker run -p "$ZOOKEEPER_PORT_MAP" --name "$ZOOKEEPER_NAME" \
+        --network "$DOCKER_NETWORK" \
+        -e ALLOW_ANONYMOUS_LOGIN=yes \
+        -d bitnami/zookeeper:latest >/dev/null
+    fi
+
+    # Wait for zookeeper to init
+    printf "Waiting for Zookeeper initialization ..."
+    sleep $ZOOKEEPER_INIT_WAIT
+    printf "Done.\n\n"
+
+}
+
 ####################################################
 # CONFIG SOURCING FROM FILE                       #
 ###################################################
@@ -246,268 +409,54 @@ then
     dump_config
 fi
 
-############ DOCKER NETWORK ############
-docker_networks=$(sudo docker network ls --format "{{.Name}}")
-if ! [[ "$docker_networks" == *"$DOCKER_NETWORK"* ]]
-then
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        sudo docker network create "$DOCKER_NETWORK" --driver bridge
-    else
-        sudo docker network create "$DOCKER_NETWORK" --driver bridge >/dev/null
-    fi
-
-    printf "Waiting for Docker Network $DOCKER_NETWORK creation ..."
-    sleep 0.5
-    printf "Done.\n\n"
-
-else
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        printf "Docker network $DOCKER_NETWORK already exists.\n"
-    fi
-fi
+############ DOCKER SETUP ############
+bridge_init
+get_container_names
 
 ############ ZOOKEEPER INIT ############
-container_names=$(sudo docker ps -a --format "{{.Names}}")
-exposed_port=$(sudo docker ps -a --format "{{.Ports}}")
-if [[ "$container_names" == *"$ZOOKEEPER_NAME"* ]]
-then
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        printf "$ZOOKEEPER_NAME container already exists -- re-creating!\n"
-        sudo docker stop "$ZOOKEEPER_NAME"
-        sudo docker rm "$ZOOKEEPER_NAME"
-    else
-        sudo docker stop "$ZOOKEEPER_NAME" >/dev/null
-        sudo docker rm "$ZOOKEEPER_NAME" >/dev/null
-    fi
-fi
-
-# Start the zookeeper container
-if [[ "$VERBOSITY" == 1 ]]
-then
-    sudo docker run -p "$ZOOKEEPER_PORT_MAP" --name "$ZOOKEEPER_NAME" \
-    --network "$DOCKER_NETWORK" \
-    -e ALLOW_ANONYMOUS_LOGIN=yes \
-    -d bitnami/zookeeper:latest
-else
-    sudo docker run -p "$ZOOKEEPER_PORT_MAP" --name "$ZOOKEEPER_NAME" \
-    --network "$DOCKER_NETWORK" \
-    -e ALLOW_ANONYMOUS_LOGIN=yes \
-    -d bitnami/zookeeper:latest >/dev/null
-fi
-
-# Wait for zookeeper to init
-printf "Waiting for Zookeeper initialization ..."
-sleep $ZOOKEEPER_INIT_WAIT
-printf "Done.\n\n"
+zookeeper_init
 
 ############  KAFKA INIT ############
-if [[ "$container_names" == *"$KAFKA_NAME"* ]]
-then
-
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        printf "$KAFKA_NAME container already exists -- re-creating!\n"
-    fi
-
-    # Stop and remove Kafka container
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        sudo docker stop "$KAFKA_NAME"
-        sudo docker rm "$KAFKA_NAME"
-    else
-        sudo docker stop "$KAFKA_NAME">/dev/null
-        sudo docker rm "$KAFKA_NAME">/dev/null
-    fi
-fi
-
-# Parse the port map for container and host ports
-kafka_int_cont_port=$(printf "${KAFKA_INTERNAL_PORT_MAP}" | cut -d":" -f1)
-kafka_int_host_port=$(printf "${KAFKA_INTERNAL_PORT_MAP}" | cut -d":" -f2)
-kafka_ext_cont_port=$(printf "${KAFKA_EXTERNAL_PORT_MAP}" | cut -d":" -f1)
-kafka_ext_host_port=$(printf "${KAFKA_EXTERNAL_PORT_MAP}" | cut -d":" -f2)
-zookeeper_cont_port=$(printf "${ZOOKEEPER_PORT_MAP}" | cut -d":" -f1)
-
-# Start the Kafka container
-if [[ "$VERBOSITY" == 1 ]]
-then
-    sudo docker run -p "${KAFKA_INTERNAL_PORT_MAP}" \
-    -p "${KAFKA_EXTERNAL_PORT_MAP}" --name "$KAFKA_NAME" \
-    --network "$DOCKER_NETWORK" \
-    --restart unless-stopped \
-    -e ALLOW_PLAINTEXT_LISTENER=yes \
-    -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
-    -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${kafka_ext_cont_port}",PLAINTEXT_HOST://localhost:"${kafka_int_cont_port}" \
-    -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${kafka_ext_cont_port}",PLAINTEXT_HOST://localhost:"${kafka_int_cont_port}" \
-    -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${zookeeper_cont_port}" \
-    -d bitnami/kafka:latest
-else
-    sudo docker run -p "${KAFKA_INTERNAL_PORT_MAP}" \
-    -p "${KAFKA_EXTERNAL_PORT_MAP}" --name "$KAFKA_NAME" \
-    --network "$DOCKER_NETWORK" \
-    --restart unless-stopped \
-    -e ALLOW_PLAINTEXT_LISTENER=yes \
-    -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
-    -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${kafka_ext_cont_port}",PLAINTEXT_HOST://localhost:"${kafka_int_cont_port}" \
-    -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${kafka_ext_cont_port}",PLAINTEXT_HOST://localhost:"${kafka_int_cont_port}" \
-    -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${zookeeper_cont_port}" \
-    -d bitnami/kafka:latest >/dev/null
-fi
-
-printf "Waiting for Kafka initialization ..."
-sleep $KAFKA_INIT_WAIT
-printf "Done.\n\n"
-
-# Create the Kafka topic if it doesn't exist
-kafka_topics=$(sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_int_cont_port --list && exit")
-if ! [[ "$kafka_topics" == *"$KAFKA_TOPIC"* ]]
-then
-    # Create the Kafka topic
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_int_cont_port --create --topic $KAFKA_TOPIC && exit"
-    else
-        sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_int_cont_port --create --topic $KAFKA_TOPIC && exit" >/dev/null
-    fi
-
-else
-
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        printf "Kafka topic $KAFKA_TOPIC already exists -- skipping topic creation.\n"
-    fi
-fi
+kafka_init
 
 ############  POSTGRES INIT ############
-if [[ "$container_names" == *"$POSTGRES_NAME"* ]]
-then
+cd ./src/db
+bash db_init.sh \
+--tag "$SEMVER_TAG" \
+--network "$DOCKER_NETWORK" \
+--postgres-name "$POSTGRES_NAME" \
+--postgres-user "$POSTGRES_USER" \
+--postgres-password "$POSTGRES_PASSWORD" \
+--postgres-port-map "$POSTGRES_PORT_MAP" \
+--postgres-wait "$POSTGRES_INIT_WAIT"
+cd ../..
 
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        printf "$POSTGRES_NAME container already exists -- re-creating!\n"
-        sudo docker stop "$POSTGRES_NAME"
-        sudo docker rm "$POSTGRES_NAME"
-    else
-        sudo docker stop "$POSTGRES_NAME">/dev/null
-        sudo docker rm "$POSTGRES_NAME">/dev/null
-    fi
-fi
+# ############  CONSUMER INIT ############
+cd ./src/consumer
+bash consumer_init.sh \
+--tag "$SEMVER_TAG" \
+--network "$DOCKER_NETWORK" \
+--consumer-name "$CONSUMER_NAME" \
+--consumer-wait "$CONSUMER_INIT_WAIT" \
+--kafka-name "$KAFKA_NAME" \
+--kafka-external-port-map "$KAFKA_EXTERNAL_PORT_MAP" \
+--postgres-name "$POSTGRES_NAME" \
+--postgres-user "$POSTGRES_USER" \
+--postgres-password "$POSTGRES_PASSWORD"
+cd ../..
 
-if [[ "$VERBOSITY" == 1 ]]
-then
-    sudo docker run -p "${POSTGRES_PORT_MAP}" --name "${POSTGRES_NAME}" \
-    --network "${DOCKER_NETWORK}" \
-    -e POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
-    -e POSTGRES_USER="${POSTGRES_USER}" \
-    -d m4ttl33t/postgres:"${SEMVER_TAG}"
-else
-    sudo docker run -p "${POSTGRES_PORT_MAP}" --name "${POSTGRES_NAME}" \
-    --network "${DOCKER_NETWORK}" \
-    -e POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
-    -e POSTGRES_USER="${POSTGRES_USER}" \
-    -d m4ttl33t/postgres:"${SEMVER_TAG}" >/dev/null
-fi
-
-printf "Waiting for Postgres initialization ..."
-sleep $POSTGRES_INIT_WAIT
-printf "Done.\n\n"
-
-############  PRODUCER INIT ############
-if [[ "$container_names" == *"$PRODUCER_NAME"* ]]
-then
-
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        printf "$PRODUCER_NAME container already exists -- re-creating!\n"
-        sudo docker stop "$PRODUCER_NAME"
-        sudo docker rm "$PRODUCER_NAME"
-    else
-        sudo docker stop "$PRODUCER_NAME">/dev/null
-        sudo docker rm "$PRODUCER_NAME">/dev/null
-    fi
-fi
-
-if [[ "$VERBOSITY" == 1 ]]
-then
-    http_port=$(echo "$PRODUCER_PORT_MAP" | cut -d":" -f2)
-    sudo docker run -p "${PRODUCER_PORT_MAP}" --name "${PRODUCER_NAME}" \
-    --network "${DOCKER_NETWORK}" \
-    -e PYTHONUNBUFFERED=1 \
-    -e HTTP_RULE="$PRODUCER_HTTP_RULE" \
-    -e KAFKA_NAME="$KAFKA_NAME" \
-    -e KAFKA_EXTERNAL_PORT_MAP="$KAFKA_EXTERNAL_PORT_MAP" \
-    -e KAFKA_TOPIC="$KAFKA_TOPIC" \
-    -e INGRESS_HTTP_LISTENER="$PRODUCER_INGRESS_HTTP_LISTENER" \
-    -e INGRESS_HTTP_PORT="$http_port" \
-    -e PYTHONUNBUFFERED=1 \
-    -d m4ttl33t/producer:"${SEMVER_TAG}"
-else
-    http_port=$(echo "$PRODUCER_PORT_MAP" | cut -d":" -f2)
-    sudo docker run -p "${PRODUCER_PORT_MAP}" --name "${PRODUCER_NAME}" \
-    --network "${DOCKER_NETWORK}" \
-    -e PYTHONUNBUFFERED=1 \
-    -e HTTP_RULE="$PRODUCER_HTTP_RULE" \
-    -e KAFKA_NAME="$KAFKA_NAME" \
-    -e KAFKA_EXTERNAL_PORT_MAP="$KAFKA_EXTERNAL_PORT_MAP" \
-    -e KAFKA_TOPIC="$KAFKA_TOPIC" \
-    -e INGRESS_HTTP_LISTENER="$PRODUCER_INGRESS_HTTP_LISTENER"
-    -e INGRESS_HTTP_PORT="$http_port" \
-    -d m4ttl33t/producer:"${SEMVER_TAG}" > /dev/null
-fi
-
+# ############  PRODUCER INIT ############
 printf "Waiting for KafkaProducer initialization ..."
-sleep $PRODUCER_INIT_WAIT
-printf "Done.\n\n"
-producer_ip=$(sudo docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $PRODUCER_NAME)
-if [[ "$VERBOSITY" == 1 ]]
-then
-    printf "Obtaining external IP address of $PRODUCER_NAME ..."
-    printf "$producer_ip\n"
-fi
-printf "HTTP Server is serving requests at $producer_ip:$http_port/$PRODUCER_HTTP_RULE\n\n"
-
-############  CONSUMER INIT ############
-if [[ "$container_names" == *"$CONSUMER_NAME"* ]]
-then
-
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        printf "$CONSUMER_NAME container already exists -- re-creating!\n"
-        sudo docker stop "$CONSUMER_NAME"
-        sudo docker rm "$CONSUMER_NAME"
-    else
-        sudo docker stop "$CONSUMER_NAME">/dev/null
-        sudo docker rm "$CONSUMER_NAME">/dev/null
-    fi
-fi
-
-if [[ "$VERBOSITY" == 1 ]]
-then
-    sudo docker run --name "${CONSUMER_NAME}" \
-    --network "${DOCKER_NETWORK}" \
-    -e PYTHONUNBUFFERED=1 \
-    -e KAFKA_NAME="$KAFKA_NAME" \
-    -e KAFKA_EXTERNAL_PORT_MAP="$KAFKA_EXTERNAL_PORT_MAP" \
-    -e KAFKA_TOPIC="$KAFKA_TOPIC" \
-    -e POSTGRES_NAME="$POSTGRES_NAME" \
-    -e POSTGRES_USER="$POSTGRES_USER" \
-    -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-    m4ttl33t/consumer:"${SEMVER_TAG}"
-else
-    sudo docker run --name "${CONSUMER_NAME}" \
-    --network "${DOCKER_NETWORK}" \
-    -e PYTHONUNBUFFERED=1 \
-    -e KAFKA_NAME="$KAFKA_NAME" \
-    -e KAFKA_EXTERNAL_PORT_MAP="$KAFKA_EXTERNAL_PORT_MAP" \
-    -e KAFKA_TOPIC="$KAFKA_TOPIC" \
-    -e POSTGRES_NAME="$POSTGRES_NAME" \
-    -e POSTGRES_USER="$POSTGRES_USER" \
-    -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-    m4ttl33t/consumer:"${SEMVER_TAG}" >/dev/null
-fi
-
-printf "Waiting for KafkaConsumer initialization ..."
-sleep $CONSUMER_INIT_WAIT
-printf "Done.\n\n"
+cd ./src/producer
+http_server_ip=$(bash producer_init.sh \
+--tag "$SEMVER_TAG" \
+--network "$DOCKER_NETWORK" \
+--kafka-name "$KAFKA_NAME" \
+--kafka-external-port-map "$KAFKA_EXTERNAL_PORT_MAP" \
+--producer-name "$PRODUCER_NAME" \
+--producer-http-rule "$PRODUCER_HTTP_RULE" \
+--producer-ingress "$PRODUCER_INGRESS_HTTP_LISTENER" \
+--producer-port-map "$PRODUCER_PORT_MAP" \
+--producer-wait "$PRODUCER_INIT_WAIT"  | tail -1)
+cd ../..
+printf "Done.\nHTTP Server IP:\n$http_server_ip\n"

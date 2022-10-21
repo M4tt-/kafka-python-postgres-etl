@@ -35,7 +35,6 @@ help() {
     printf "  --postgres-name: The name of the Postgres container.\n"
     printf "  --postgres-user: The name of the Postgres user.\n"
     printf "  --postgres-password: The name of the Postgres password.\n"
-    printf "  --postgres-port-map: The Postgres port map, e.g., 5432:5432.\n"
 }
 
 ###################################################
@@ -53,7 +52,6 @@ dump_config() {
     printf "KAFKA_TOPIC: $KAFKA_TOPIC\n"
     printf "POSTGRES_NAME: $POSTGRES_NAME\n"
     printf "POSTGRES_PASSWORD: $POSTGRES_PASSWORD\n"
-    printf "POSTGRES_PORT_MAP: $POSTGRES_PORT_MAP\n"
     printf "POSTGRES_USER: $POSTGRES_USER\n"
     printf "SEMVER_TAG: $SEMVER_TAG\n"
 
@@ -71,7 +69,6 @@ KAFKA_EXTERNAL_PORT_MAP=$(jq -r .KAFKA_EXTERNAL_PORT_MAP config.consumer)
 KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC config.consumer)
 POSTGRES_NAME=$(jq -r .POSTGRES_NAME config.consumer)
 POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD config.consumer)
-POSTGRES_PORT_MAP=$(jq -r .POSTGRES_PORT_MAP config.consumer)
 POSTGRES_USER=$(jq -r .POSTGRES_USER config.consumer)
 SEMVER_TAG=$(jq -r .SEMVER_TAG config.consumer)
 VERBOSITY=0
@@ -88,6 +85,11 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         ;;
         --consumer-name)
         CONSUMER_NAME="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --consumer-wait)
+        CONSUMER_INIT_WAIT="$2"
         shift # past argument
         shift # past value
         ;;
@@ -118,11 +120,6 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         ;;
         --postgres-password)
         POSTGRES_PASSWORD="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --postgres-port-map)
-        POSTGRES_PORT_MAP="$2"
         shift # past argument
         shift # past value
         ;;
@@ -183,7 +180,7 @@ then
     -e POSTGRES_NAME="$POSTGRES_NAME" \
     -e POSTGRES_USER="$POSTGRES_USER" \
     -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-    m4ttl33t/consumer:"${SEMVER_TAG}"
+    -d m4ttl33t/consumer:"${SEMVER_TAG}"
 else
     sudo docker run --name "${CONSUMER_NAME}" \
     --network "${DOCKER_NETWORK}" \
@@ -194,7 +191,7 @@ else
     -e POSTGRES_NAME="$POSTGRES_NAME" \
     -e POSTGRES_USER="$POSTGRES_USER" \
     -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-    m4ttl33t/consumer:"${SEMVER_TAG}" >/dev/null
+    -d m4ttl33t/consumer:"${SEMVER_TAG}" >/dev/null
 fi
 
 printf "Waiting for KafkaConsumer initialization ..."
