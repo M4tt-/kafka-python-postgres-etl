@@ -35,6 +35,7 @@ help() {
     printf "  -n, --network: Docker network name.\n"
     printf "  --consumer-name: KafkaConsumer container name.\n"
     printf "  --consumer-wait: The delay to wait for KafkaConsumer after container is started in seconds.\n"
+    printf "  --http-log-file: The full path to store the log of HTTP server host name.\n"
     printf "  --kafka-name: Kafka container name.\n"
     printf "  --kafka-internal-port-map: Kafka port map, e.g., 29092:29092.\n"
     printf "  --kafka-external-port-map: Kafka port map, e.g., 9092:9092.\n"
@@ -64,6 +65,7 @@ dump_config() {
     printf "CONSUMER_NAME: $CONSUMER_NAME\n"
     printf "CONSUMER_INIT_WAIT: $CONSUMER_INIT_WAIT\n"
     printf "DOCKER_NETWORK: $DOCKER_NETWORK\n"
+    printf "HTTP_LOG_FILE: $HTTP_LOG_FILE\n"
     printf "KAFKA_NAME: $KAFKA_NAME\n"
     printf "KAFKA_EXTERNAL_PORT_MAP: $KAFKA_EXTERNAL_PORT_MAP\n"
     printf "KAFKA_INTERNAL_PORT_MAP: $KAFKA_INTERNAL_PORT_MAP\n"
@@ -257,6 +259,7 @@ zookeeper_init() {
 CONSUMER_NAME=$(jq -r .CONSUMER_NAME config.master)
 CONSUMER_INIT_WAIT=$(jq -r .CONSUMER_INIT_WAIT config.master)
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
+HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE config.master)
 KAFKA_NAME=$(jq -r .KAFKA_NAME config.master)
 KAFKA_EXTERNAL_PORT_MAP=$(jq -r .KAFKA_EXTERNAL_PORT_MAP config.master)
 KAFKA_INTERNAL_PORT_MAP=$(jq -r .KAFKA_INTERNAL_PORT_MAP config.master)
@@ -290,6 +293,11 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         ;;
         --consumer-name)
         CONSUMER_NAME="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --http-log-file)
+        HTTP_LOG_FILE="$2"
         shift # past argument
         shift # past value
         ;;
@@ -459,4 +467,7 @@ http_server_ip=$(bash producer_init.sh \
 --producer-port-map "$PRODUCER_PORT_MAP" \
 --producer-wait "$PRODUCER_INIT_WAIT"  | tail -1)
 cd ../..
-printf "Done.\nHTTP Server IP:\n$http_server_ip\n"
+printf "Done.\n"
+dir=$(dirname $HTTP_LOG_FILE)
+mkdir -p $dir
+printf "HTTP Server IP:\n$http_server_ip\n" | tee "$HTTP_LOG_FILE"

@@ -9,27 +9,11 @@ This module contains a class ``HTTPClient`` to make HTTP requests.
 
 # %% IMPORTS
 
-import ipaddress
 import requests
 
 # %% CONSTANTS
 
 DEFAULT_HTTP_TIMEOUT = 10
-
-# %% FUNCTIONS
-
-def validate_ip_address(address):
-    """Validate an IP address.
-
-    Parameters:
-        address (str): The alleged IP address.
-
-    Returns:
-        str: A fixed IP address if possible.
-    """
-
-    return str(ipaddress.ip_address(address.split(':')[0]))
-
 
 # %% CLASSES
 
@@ -52,7 +36,7 @@ class HTTPClient:
             None.
         """
 
-        self.http_server = validate_ip_address(http_server)
+        self.http_server = http_server
         self.http_port = http_port
         self.http_rule = http_rule
         self.url = f'http://{self.http_server}:{self.http_port}/{self.http_rule}'

@@ -38,6 +38,7 @@ class Producer(KafkaProducer):
         self.__app.add_url_rule(rule=f'/{self.http_rule}',
                                 methods=['GET', 'POST'],
                                 view_func=self.process_event)
+        self.post_count = 0
 
     def get_config(self):
         """Try to get configuration details through various, prioritized means.
@@ -77,9 +78,12 @@ class Producer(KafkaProducer):
         """
 
         if request.method in ['GET']:
-            return "Welcome to HTTPServer!"
+            out_str = f"Welcome to KafkaProducer/HTTPServer!\n\n" \
+                      f"Events served: {self.post_count}."
+            return out_str
 
         if request.method in ['POST']:
+            self.post_count += 1
             event_data = request.get_data(as_text=True)
             if not event_data:
                 return 'Invalid event type or format!', 400

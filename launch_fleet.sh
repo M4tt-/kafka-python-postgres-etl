@@ -26,13 +26,12 @@ help() {
     printf "\nlaunch_fleet.sh -- Initialize N Vehicles (containers).\n\n"
 
     printf "Usage: bash launch_fleet.sh HTTP_SERVER [options]\n\n"
-    printf "Positional Args:\n"
-    printf "  HTTP_SERVER: The destination HTTP server (required)."
     printf "Flags:\n"
     printf "  -v: Turn on verbosity.\n\n"
     printf "Options:\n"
     printf "  -t, --tag: Semver tag name of Docker images to pull.\n"
     printf "  -n, --network: Docker network name.\n"
+    printf "  --http-log-file: The full path to store the log of HTTP server host name.\n"
     printf "  --num-vehicles: The number of Vehicle containers to spin up.\n"
     printf "  --producer-http-rule: The http endpoint (URL suffix) for KafkaProducer (HTTP server).\n"
     printf "  --producer-port-map: The KafkaProducer port map, e.g., 5000:5000.\n"
@@ -46,6 +45,7 @@ dump_config() {
 
     printf "\nSourced configuration:\n\n"
     printf "DOCKER_NETWORK: $DOCKER_NETWORK\n"
+    printf "HTTP_LOG_FILE: $HTTP_LOG_FILE\n"
     printf "NUM_VEHICLES: $NUM_VEHICLES\n"
     printf "PRODUCER_HTTP_SERVER: $PRODUCER_HTTP_SERVER\n"
     printf "PRODUCER_HTTP_RULE: $PRODUCER_HTTP_RULE\n"
@@ -59,9 +59,10 @@ dump_config() {
 ###################################################
 
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
+HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE config.master)
 NUM_VEHICLES=1
 PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE config.master)
-PRODUCER_HTTP_SERVER=$1
+PRODUCER_HTTP_SERVER=$(cat $HTTP_LOG_FILE | tail -1)
 PRODUCER_PORT_MAP=$(jq -r .PRODUCER_PORT_MAP config.master)
 SEMVER_TAG=$(jq -r .SEMVER_TAG config.master)
 VERBOSITY=0
@@ -87,7 +88,12 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        ----producer-http-rule)
+        --http-log-file)
+        HTTP_LOG_FILE="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --producer-http-rule)
         PRODUCER_HTTP_RULE="$2"
         shift # past argument
         shift # past value

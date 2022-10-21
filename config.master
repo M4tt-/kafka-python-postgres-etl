@@ -2,6 +2,7 @@
     "CONSUMER_NAME": "consumer",
     "CONSUMER_INIT_WAIT": 1,
     "DOCKER_NETWORK": "av_telemetry",
+    "HTTP_LOG_FILE": "/tmp/launch_infra_http_server.log",
     "KAFKA_NAME": "kafka-server",
     "KAFKA_EXTERNAL_PORT_MAP": "9092:9092",
     "KAFKA_INTERNAL_PORT_MAP": "29092:29092",
