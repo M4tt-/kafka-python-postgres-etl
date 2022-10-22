@@ -39,13 +39,23 @@ help() {
 dump_config() {
 
     printf "\nSourced configuration:\n\n"
-    printf "DOCKER_NETWORK: $DOCKER_NETWORK\n"
-    printf "POSTGRES_NAME: $POSTGRES_NAME\n"
-    printf "POSTGRES_INIT_WAIT: $POSTGRES_INIT_WAIT\n"
-    printf "POSTGRES_PASSWORD: $POSTGRES_PASSWORD\n"
-    printf "POSTGRES_PORT_MAP: $POSTGRES_PORT_MAP\n"
-    printf "POSTGRES_USER: $POSTGRES_USER\n"
-    printf "SEMVER_TAG: $SEMVER_TAG\n"
+    printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
+    printf "POSTGRES_NAME: %s\n" "$POSTGRES_NAME"
+    printf "POSTGRES_INIT_WAIT: %s\n" "$POSTGRES_INIT_WAIT"
+    printf "POSTGRES_PASSWORD: %s\n" "$POSTGRES_PASSWORD"
+    printf "POSTGRES_PORT_MAP: %s\n" "$POSTGRES_PORT_MAP"
+    printf "POSTGRES_USER: %s\n" "$POSTGRES_USER"
+    printf "SEMVER_TAG: %s\n" "$SEMVER_TAG"
+
+}
+
+###################################################
+# FUNCTION: get_container_names                   #
+###################################################
+
+get_container_names() {
+
+    container_names=$(sudo docker ps -a --format "{{.Names}}")
 
 }
 
@@ -111,11 +121,14 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         VERBOSITY=1
         shift # past argument
         ;;
-        -*|--*)
+        -*)
         echo "Unknown option $1"
         exit 1
         ;;
         *)
+        echo "Bad positional argument."
+        exit 1
+        ;;
     esac
 done
 
@@ -128,6 +141,8 @@ then
     dump_config
 fi
 
+get_container_names
+
 ############ DOCKER NETWORK ############
 docker_networks=$(sudo docker network ls --format "{{.Name}}")
 if ! [[ "$docker_networks" == *"$DOCKER_NETWORK"* ]]
@@ -139,14 +154,14 @@ then
         sudo docker network create "$DOCKER_NETWORK" --driver bridge >/dev/null
     fi
 
-    printf "Waiting for Docker Network $DOCKER_NETWORK creation ..."
+    printf "Waiting for Docker Network %s creation ..." "$DOCKER_NETWORK"
     sleep 0.5
     printf "Done.\n\n"
 
 else
     if [[ "$VERBOSITY" == 1 ]]
     then
-        printf "Docker network $DOCKER_NETWORK already exists.\n"
+        printf "Docker network %s already exists.\n" "$DOCKER_NETWORK"
     fi
 fi
 
@@ -157,7 +172,7 @@ then
 
     if [[ "$VERBOSITY" == 1 ]]
     then
-        printf "$POSTGRES_NAME container already exists -- re-creating!\n"
+        printf "%s container already exists -- re-creating!\n" "$POSTGRES_NAME"
         sudo docker stop "$POSTGRES_NAME"
         sudo docker rm "$POSTGRES_NAME"
     else
@@ -182,5 +197,5 @@ else
 fi
 
 printf "Waiting for Postgres initialization ..."
-sleep $POSTGRES_INIT_WAIT
+sleep "$POSTGRES_INIT_WAIT"
 printf "Done.\n\n"

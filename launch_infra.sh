@@ -62,30 +62,30 @@ help() {
 dump_config() {
 
     printf "\nSourced configuration (master):\n\n"
-    printf "CONSUMER_NAME: $CONSUMER_NAME\n"
-    printf "CONSUMER_INIT_WAIT: $CONSUMER_INIT_WAIT\n"
-    printf "DOCKER_NETWORK: $DOCKER_NETWORK\n"
-    printf "HTTP_LOG_FILE: $HTTP_LOG_FILE\n"
-    printf "KAFKA_NAME: $KAFKA_NAME\n"
-    printf "KAFKA_EXTERNAL_PORT_MAP: $KAFKA_EXTERNAL_PORT_MAP\n"
-    printf "KAFKA_INTERNAL_PORT_MAP: $KAFKA_INTERNAL_PORT_MAP\n"
-    printf "KAFKA_INIT_WAIT: $KAFKA_INIT_WAIT\n"
-    printf "KAFKA_TOPIC: $KAFKA_TOPIC\n"
-    printf "POSTGRES_NAME: $POSTGRES_NAME\n"
-    printf "POSTGRES_INIT_WAIT: $POSTGRES_INIT_WAIT\n"
-    printf "POSTGRES_PASSWORD: $POSTGRES_PASSWORD\n"
-    printf "POSTGRES_PORT_MAP: $POSTGRES_PORT_MAP\n"
-    printf "POSTGRES_USER: $POSTGRES_USER\n"
-    printf "PRODUCER_NAME: $PRODUCER_NAME\n"
-    printf "PRODUCER_HTTP_RULE: $PRODUCER_HTTP_RULE\n"
-    printf "PRODUCER_INGRESS_HTTP_LISTENER: $PRODUCER_INGRESS_HTTP_LISTENER\n"
-    printf "PRODUCER_INIT_WAIT: $PRODUCER_INIT_WAIT\n"
-    printf "PRODUCER_PORT_MAP: $PRODUCER_PORT_MAP\n"
-    printf "SEMVER_TAG: $SEMVER_TAG\n"
-    printf "VERBOSITY: $VERBOSITY\n"
-    printf "ZOOKEEPER_NAME: $ZOOKEEPER_NAME\n"
-    printf "ZOOKEEPER_PORT_MAP: $ZOOKEEPER_PORT_MAP\n"
-    printf "ZOOKEEPER_INIT_WAIT: $ZOOKEEPER_INIT_WAIT\n\n"
+    printf "CONSUMER_NAME: %s\n" "$CONSUMER_NAME"
+    printf "CONSUMER_INIT_WAIT: %s\n" "$CONSUMER_INIT_WAIT"
+    printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
+    printf "HTTP_LOG_FILE: %s\n" "$HTTP_LOG_FILE"
+    printf "KAFKA_NAME: %s\n" "$KAFKA_NAME"
+    printf "KAFKA_EXTERNAL_PORT_MAP: %s\n" "$KAFKA_EXTERNAL_PORT_MAP"
+    printf "KAFKA_INTERNAL_PORT_MAP: %s\n" "$KAFKA_INTERNAL_PORT_MAP"
+    printf "KAFKA_INIT_WAIT: %s\n" "$KAFKA_INIT_WAIT"
+    printf "KAFKA_TOPIC: %s\n" "$KAFKA_TOPIC"
+    printf "POSTGRES_NAME: %s\n" "$POSTGRES_NAME"
+    printf "POSTGRES_INIT_WAIT: %s\n" "$POSTGRES_INIT_WAIT"
+    printf "POSTGRES_PASSWORD: %s\n" "$POSTGRES_PASSWORD"
+    printf "POSTGRES_PORT_MAP: %s\n" "$POSTGRES_PORT_MAP"
+    printf "POSTGRES_USER: %s\n" "$POSTGRES_USER"
+    printf "PRODUCER_NAME: %s\n" "$PRODUCER_NAME"
+    printf "PRODUCER_HTTP_RULE: %s\n" "$PRODUCER_HTTP_RULE"
+    printf "PRODUCER_INGRESS_HTTP_LISTENER: %s\n" "$PRODUCER_INGRESS_HTTP_LISTENER"
+    printf "PRODUCER_INIT_WAIT: %s\n" "$PRODUCER_INIT_WAIT"
+    printf "PRODUCER_PORT_MAP: %s\n" "$PRODUCER_PORT_MAP"
+    printf "SEMVER_TAG: %s\n" "$SEMVER_TAG"
+    printf "VERBOSITY: %s\n" "$VERBOSITY"
+    printf "ZOOKEEPER_NAME: %s\n" "$ZOOKEEPER_NAME"
+    printf "ZOOKEEPER_PORT_MAP: %s\n" "$ZOOKEEPER_PORT_MAP"
+    printf "ZOOKEEPER_INIT_WAIT: %s\n\n" "$ZOOKEEPER_INIT_WAIT"
 
 }
 
@@ -105,14 +105,14 @@ bridge_init() {
             sudo docker network create "$DOCKER_NETWORK" --driver bridge >/dev/null
         fi
 
-        printf "Waiting for Docker Network $DOCKER_NETWORK creation ..."
+        printf "Waiting for Docker Network %s creation ..." "$DOCKER_NETWORK"
         sleep 0.5
         printf "Done.\n\n"
 
     else
         if [[ "$VERBOSITY" == 1 ]]
         then
-            printf "Docker network $DOCKER_NETWORK already exists.\n"
+            printf "Docker network %s already exists.\n" "$DOCKER_NETWORK"
         fi
     fi
 
@@ -139,7 +139,7 @@ kafka_init() {
 
         if [[ "$VERBOSITY" == 1 ]]
         then
-            printf "$KAFKA_NAME container already exists -- re-creating!\n"
+            printf "%s container already exists -- re-creating!\n" "$KAFKA_NAME"
         fi
 
         # Stop and remove Kafka container
@@ -154,11 +154,9 @@ kafka_init() {
     fi
 
     # Parse the port map for container and host ports
-    kafka_int_cont_port=$(printf "${KAFKA_INTERNAL_PORT_MAP}" | cut -d":" -f1)
-    kafka_int_host_port=$(printf "${KAFKA_INTERNAL_PORT_MAP}" | cut -d":" -f2)
-    kafka_ext_cont_port=$(printf "${KAFKA_EXTERNAL_PORT_MAP}" | cut -d":" -f1)
-    kafka_ext_host_port=$(printf "${KAFKA_EXTERNAL_PORT_MAP}" | cut -d":" -f2)
-    zookeeper_cont_port=$(printf "${ZOOKEEPER_PORT_MAP}" | cut -d":" -f1)
+    kafka_int_cont_port=$(printf "%s" "${KAFKA_INTERNAL_PORT_MAP}" | cut -d":" -f1)
+    kafka_ext_cont_port=$(printf "%s" "${KAFKA_EXTERNAL_PORT_MAP}" | cut -d":" -f1)
+    zookeeper_cont_port=$(printf "%s" "${ZOOKEEPER_PORT_MAP}" | cut -d":" -f1)
 
     # Start the Kafka container
     if [[ "$VERBOSITY" == 1 ]]
@@ -187,7 +185,7 @@ kafka_init() {
     fi
 
     printf "Waiting for Kafka initialization ..."
-    sleep $KAFKA_INIT_WAIT
+    sleep "$KAFKA_INIT_WAIT"
     printf "Done.\n\n"
 
     # Create the Kafka topic if it doesn't exist
@@ -206,7 +204,7 @@ kafka_init() {
 
         if [[ "$VERBOSITY" == 1 ]]
         then
-            printf "Kafka topic $KAFKA_TOPIC already exists -- skipping topic creation.\n"
+            printf "Kafka topic %s already exists -- skipping topic creation.\n" "$KAFKA_TOPIC"
         fi
     fi
 
@@ -222,7 +220,7 @@ zookeeper_init() {
     then
         if [[ "$VERBOSITY" == 1 ]]
         then
-            printf "$ZOOKEEPER_NAME container already exists -- re-creating!\n"
+            printf "%s container already exists -- re-creating!\n" "$ZOOKEEPER_NAME"
             sudo docker stop "$ZOOKEEPER_NAME"
             sudo docker rm "$ZOOKEEPER_NAME"
         else
@@ -247,7 +245,7 @@ zookeeper_init() {
 
     # Wait for zookeeper to init
     printf "Waiting for Zookeeper initialization ..."
-    sleep $ZOOKEEPER_INIT_WAIT
+    sleep "$ZOOKEEPER_INIT_WAIT"
     printf "Done.\n\n"
 
 }
@@ -361,7 +359,7 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        ----producer-http-rule)
+        --producer-http-rule)
         PRODUCER_HTTP_RULE="$2"
         shift # past argument
         shift # past value
@@ -400,11 +398,14 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        -*|--*)
+        -*)
         echo "Unknown option $1"
         exit 1
         ;;
         *)
+        echo "Bad positional argument."
+        exit 1
+        ;;
     esac
 done
 
@@ -428,7 +429,7 @@ zookeeper_init
 kafka_init
 
 ############  POSTGRES INIT ############
-cd ./src/db
+cd ./src/db || exit
 bash db_init.sh \
 --tag "$SEMVER_TAG" \
 --network "$DOCKER_NETWORK" \
@@ -440,7 +441,7 @@ bash db_init.sh \
 cd ../..
 
 # ############  CONSUMER INIT ############
-cd ./src/consumer
+cd ./src/consumer || exit
 bash consumer_init.sh \
 --tag "$SEMVER_TAG" \
 --network "$DOCKER_NETWORK" \
@@ -455,7 +456,7 @@ cd ../..
 
 # ############  PRODUCER INIT ############
 printf "Waiting for KafkaProducer initialization ..."
-cd ./src/producer
+cd ./src/producer || exit
 http_server_ip=$(bash producer_init.sh \
 --tag "$SEMVER_TAG" \
 --network "$DOCKER_NETWORK" \
@@ -468,6 +469,6 @@ http_server_ip=$(bash producer_init.sh \
 --producer-wait "$PRODUCER_INIT_WAIT"  | tail -1)
 cd ../..
 printf "Done.\n"
-dir=$(dirname $HTTP_LOG_FILE)
-mkdir -p $dir
-printf "HTTP Server IP:\n$http_server_ip\n" | tee "$HTTP_LOG_FILE"
+dir=$(dirname "$HTTP_LOG_FILE")
+mkdir -p "$dir"
+printf "HTTP Server IP:\n%s\n" "$http_server_ip" | tee "$HTTP_LOG_FILE"

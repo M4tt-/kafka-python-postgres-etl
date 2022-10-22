@@ -43,17 +43,27 @@ help() {
 
 dump_config() {
 
-    printf "\nSourced configuration (master):\n\n"
-    printf "CONSUMER_NAME: $CONSUMER_NAME\n"
-    printf "CONSUMER_INIT_WAIT: $CONSUMER_INIT_WAIT\n"
-    printf "DOCKER_NETWORK: $DOCKER_NETWORK\n"
-    printf "KAFKA_NAME: $KAFKA_NAME\n"
-    printf "KAFKA_EXTERNAL_PORT_MAP: $KAFKA_EXTERNAL_PORT_MAP\n"
-    printf "KAFKA_TOPIC: $KAFKA_TOPIC\n"
-    printf "POSTGRES_NAME: $POSTGRES_NAME\n"
-    printf "POSTGRES_PASSWORD: $POSTGRES_PASSWORD\n"
-    printf "POSTGRES_USER: $POSTGRES_USER\n"
-    printf "SEMVER_TAG: $SEMVER_TAG\n"
+    printf "\nSourced configuration:\n\n"
+    printf "CONSUMER_NAME: %s\n" "$CONSUMER_NAME"
+    printf "CONSUMER_INIT_WAIT: %s\n" "$CONSUMER_INIT_WAIT"
+    printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
+    printf "KAFKA_NAME: %s\n" "$KAFKA_NAME"
+    printf "KAFKA_EXTERNAL_PORT_MAP: %s\n" "$KAFKA_EXTERNAL_PORT_MAP"
+    printf "KAFKA_TOPIC: %s\n" "$KAFKA_TOPIC"
+    printf "POSTGRES_NAME: %s\n" "$POSTGRES_NAME"
+    printf "POSTGRES_PASSWORD: %s\n" "$POSTGRES_PASSWORD"
+    printf "POSTGRES_USER: %s\n" "$POSTGRES_USER"
+    printf "SEMVER_TAG: %s\n" "$SEMVER_TAG"
+
+}
+
+###################################################
+# FUNCTION: get_container_names                   #
+###################################################
+
+get_container_names() {
+
+    container_names=$(sudo docker ps -a --format "{{.Names}}")
 
 }
 
@@ -137,11 +147,14 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         VERBOSITY=1
         shift # past argument
         ;;
-        -*|--*)
+        -*)
         echo "Unknown option $1"
         exit 1
         ;;
         *)
+        echo "Bad positional argument."
+        exit 1
+        ;;
     esac
 done
 
@@ -154,13 +167,15 @@ then
     dump_config
 fi
 
+get_container_names
+
 ############  CONSUMER INIT ############
 if [[ "$container_names" == *"$CONSUMER_NAME"* ]]
 then
 
     if [[ "$VERBOSITY" == 1 ]]
     then
-        printf "$CONSUMER_NAME container already exists -- re-creating!\n"
+        printf "%s container already exists -- re-creating!\n" "$CONSUMER_NAME"
         sudo docker stop "$CONSUMER_NAME"
         sudo docker rm "$CONSUMER_NAME"
     else
@@ -195,5 +210,5 @@ else
 fi
 
 printf "Waiting for KafkaConsumer initialization ..."
-sleep $CONSUMER_INIT_WAIT
+sleep "$CONSUMER_INIT_WAIT"
 printf "Done.\n\n"

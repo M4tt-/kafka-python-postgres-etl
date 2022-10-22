@@ -44,14 +44,14 @@ help() {
 dump_config() {
 
     printf "\nSourced configuration:\n\n"
-    printf "DOCKER_NETWORK: $DOCKER_NETWORK\n"
-    printf "HTTP_LOG_FILE: $HTTP_LOG_FILE\n"
-    printf "NUM_VEHICLES: $NUM_VEHICLES\n"
-    printf "PRODUCER_HTTP_SERVER: $PRODUCER_HTTP_SERVER\n"
-    printf "PRODUCER_HTTP_RULE: $PRODUCER_HTTP_RULE\n"
-    printf "PRODUCER_PORT_MAP: $PRODUCER_PORT_MAP\n"
-    printf "SEMVER_TAG: $SEMVER_TAG\n"
-    printf "VERBOSITY: $VERBOSITY\n\n"
+    printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
+    printf "HTTP_LOG_FILE: %s\n" "$HTTP_LOG_FILE"
+    printf "NUM_VEHICLES: %s\n" "$NUM_VEHICLES"
+    printf "PRODUCER_HTTP_SERVER: %s\n" "$PRODUCER_HTTP_SERVER"
+    printf "PRODUCER_HTTP_RULE: %s\n" "$PRODUCER_HTTP_RULE"
+    printf "PRODUCER_PORT_MAP: %s\n" "$PRODUCER_PORT_MAP"
+    printf "SEMVER_TAG: %s\n" "$SEMVER_TAG"
+    printf "VERBOSITY: %s\n\n" "$VERBOSITY"
 }
 
 ####################################################
@@ -62,7 +62,7 @@ DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
 HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE config.master)
 NUM_VEHICLES=1
 PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE config.master)
-PRODUCER_HTTP_SERVER=$(cat $HTTP_LOG_FILE | tail -1)
+PRODUCER_HTTP_SERVER=$(tail -1 "$HTTP_LOG_FILE")
 PRODUCER_PORT_MAP=$(jq -r .PRODUCER_PORT_MAP config.master)
 SEMVER_TAG=$(jq -r .SEMVER_TAG config.master)
 VERBOSITY=0
@@ -111,14 +111,14 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         VERBOSITY=1
         shift # past argument
         ;;
-        -*|--*)
+        -*)
         echo "Unknown option $1"
         exit 1
         ;;
         *)
-        shift
+        echo "Bad positional argument."
+        exit 1
         ;;
-        *)
     esac
 done
 
@@ -139,21 +139,20 @@ if ! [[ "$NUM_VEHICLES" =~ ^[0-9]+$ ]]
         exit 1
 fi
 
-
 ############  VEHICLE INIT ############
 
 if [[ "$VERBOSITY" == 1 ]]
 then
-    printf "Creating $NUM_VEHICLES container(s) ...\n"
+    printf "Creating %s container(s) ...\n" "$NUM_VEHICLES"
 fi
-for (( i=1; i<=$NUM_VEHICLES; i++ ))
+for (( i=1; i<=NUM_VEHICLES; i++ ))
 do
 
     # Declare loop variable container name
     container_name="vehicle$i"
     if [[ "$VERBOSITY" == 1 ]]
     then
-        printf "  Creating $container_name ..."
+        printf "  Creating %s ..." "$container_name"
     fi
 
     # Remove the container if it already exists
@@ -162,7 +161,7 @@ do
 
         if [[ "$VERBOSITY" == 1 ]]
         then
-            printf "$container_name container already exists -- re-creating!\n"
+            printf "%s container already exists -- re-creating!\n" "$container_name"
             sudo docker stop "$container_name"
             sudo docker rm "$container_name"
         else
@@ -188,5 +187,8 @@ do
         -e PRODUCER_HTTP_RULE="$PRODUCER_HTTP_RULE" \
         -d m4ttl33t/vehicle:"${SEMVER_TAG}" > /dev/null
     fi
-    printf "  Done.\n"
+    if [[ "$VERBOSITY" == 1 ]]
+    then
+        printf "  Done.\n"
+    fi
 done

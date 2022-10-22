@@ -46,19 +46,29 @@ help() {
 dump_config() {
 
     printf "\nSourced configuration (master):\n\n"
-    printf "DOCKER_NETWORK: $DOCKER_NETWORK\n"
-    printf "KAFKA_NAME: $KAFKA_NAME\n"
-    printf "KAFKA_EXTERNAL_PORT_MAP: $KAFKA_EXTERNAL_PORT_MAP\n"
-    printf "KAFKA_INTERNAL_PORT_MAP: $KAFKA_INTERNAL_PORT_MAP\n"
-    printf "KAFKA_INIT_WAIT: $KAFKA_INIT_WAIT\n"
-    printf "KAFKA_TOPIC: $KAFKA_TOPIC\n"
-    printf "PRODUCER_NAME: $PRODUCER_NAME\n"
-    printf "PRODUCER_HTTP_RULE: $PRODUCER_HTTP_RULE\n"
-    printf "PRODUCER_INGRESS_HTTP_LISTENER: $PRODUCER_INGRESS_HTTP_LISTENER\n"
-    printf "PRODUCER_INIT_WAIT: $PRODUCER_INIT_WAIT\n"
-    printf "PRODUCER_PORT_MAP: $PRODUCER_PORT_MAP\n"
-    printf "SEMVER_TAG: $SEMVER_TAG\n"
-    printf "VERBOSITY: $VERBOSITY\n"
+    printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
+    printf "KAFKA_NAME: %s\n" "$KAFKA_NAME"
+    printf "KAFKA_EXTERNAL_PORT_MAP: %s\n" "$KAFKA_EXTERNAL_PORT_MAP"
+    printf "KAFKA_INTERNAL_PORT_MAP: %s\n" "$KAFKA_INTERNAL_PORT_MAP"
+    printf "KAFKA_INIT_WAIT: %s\n" "$KAFKA_INIT_WAIT"
+    printf "KAFKA_TOPIC: %s\n" "$KAFKA_TOPIC"
+    printf "PRODUCER_NAME: %s\n" "$PRODUCER_NAME"
+    printf "PRODUCER_HTTP_RULE: %s\n" "$PRODUCER_HTTP_RULE"
+    printf "PRODUCER_INGRESS_HTTP_LISTENER: %s\n" "$PRODUCER_INGRESS_HTTP_LISTENER"
+    printf "PRODUCER_INIT_WAIT: %s\n" "$PRODUCER_INIT_WAIT"
+    printf "PRODUCER_PORT_MAP: %s\n" "$PRODUCER_PORT_MAP"
+    printf "SEMVER_TAG: %s\n" "$SEMVER_TAG"
+    printf "VERBOSITY: %s\n" "$VERBOSITY"
+
+}
+
+###################################################
+# FUNCTION: get_container_names                   #
+###################################################
+
+get_container_names() {
+
+    container_names=$(sudo docker ps -a --format "{{.Names}}")
 
 }
 
@@ -154,7 +164,7 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         VERBOSITY=1
         shift # past argument
         ;;
-        -*|--*)
+        -*)
         echo "Unknown option $1"
         exit 1
         ;;
@@ -162,13 +172,14 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         echo "Bad positional argument."
         exit 1
         ;;
-        *)
     esac
 done
 
 ###################################################
 # MAIN                                            #
 ###################################################
+
+get_container_names
 
 if [[ $VERBOSITY == 1 ]]
 then
@@ -186,14 +197,14 @@ then
         sudo docker network create "$DOCKER_NETWORK" --driver bridge >/dev/null
     fi
 
-    printf "Waiting for Docker Network $DOCKER_NETWORK creation ..."
+    printf "Waiting for Docker Network %s creation ..." "$DOCKER_NETWORK"
     sleep 0.5
     printf "Done.\n\n"
 
 else
     if [[ "$VERBOSITY" == 1 ]]
     then
-        printf "Docker network $DOCKER_NETWORK already exists.\n"
+        printf "Docker network %s already exists.\n" "$DOCKER_NETWORK"
     fi
 fi
 
@@ -203,7 +214,7 @@ then
 
     if [[ "$VERBOSITY" == 1 ]]
     then
-        printf "$PRODUCER_NAME container already exists -- re-creating!\n"
+        printf "%s container already exists -- re-creating!\n" "$PRODUCER_NAME"
         sudo docker stop "$PRODUCER_NAME"
         sudo docker rm "$PRODUCER_NAME"
     else
@@ -240,7 +251,7 @@ else
 fi
 
 printf "Waiting for KafkaProducer initialization ..."
-sleep $PRODUCER_INIT_WAIT
+sleep "$PRODUCER_INIT_WAIT"
 printf "Done.\n\n"
-producer_ip=$(sudo docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $PRODUCER_NAME)
-printf "$producer_ip\n"
+producer_ip=$(sudo docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$PRODUCER_NAME")
+printf "%s\n" "$producer_ip"
