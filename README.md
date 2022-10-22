@@ -2,13 +2,22 @@
 
 This project demonstrates a containerized, Python-based, streaming ETL pipeline. It is written in Python 3.6 (see `requirements.txt`).
 
-The main goal is to monitor and store real-time streaming data from a fleet of vehicles.
+There are two main goals:
+1. To (reliably) monitor and store real-time streaming data from a *fleet* of vehicles.
+2. To demonstrate how the infrastructure for such an application may be automatically provisioned (IAAC).
+
+Here's a short blurb about how it works:
 
 Each vehicle (`vehicle.Vehicle`) produces some data (in this revision, just position and speed over time plus some metadata) at small, regular time intervals.
-Each vehicle's data is sent to an HTTP server (`producer.Producer`), where it is transformed into a JSON string and published to a Kafka topic (default `test_topic`).
-A Kafka consumer (`consumer.Consumer`) will consume the published JSON string from the topic, structure the data, and then insert it into a PostgreSQL database.
+Each vehicle's data is sent to a HTTP server (`producer.Producer`), where it is transformed into a JSON string and published to a Kafka topic (default `test_topic`).
+A consumer (`consumer.Consumer`) will consume the published JSON string from the Kafka topic, structure the data, and then insert it into a PostgreSQL database.
 
 ## Getting Started
+
+The bash scripts rely on `jq` to parse JSON. If this is not installed in your environment, then run the following:
+
+    $sudo apt-get update
+    $sudo apt-get install jq
 
 Ensure a Docker daemon is running and there are no services occupying ports
 9092, 5432, 2181, and 5000 (if these ports are not available, the host:container port mapping can be modified in `config.master`).
@@ -16,9 +25,9 @@ Ensure a Docker daemon is running and there are no services occupying ports
 Pull the master branch and navigate to repo root. Execute:
 
     $bash launch_infra.sh
-    $bash launch_fleet.sh
+    $bash launch_fleet.sh [--num-vehicles <N>]
 
->Can use -v flag for verbosity.
+>Can use -v flag for verbosity -- see the help menu(s)
 
 When you're finished, you can similarly tear down the containers:
 
@@ -85,4 +94,13 @@ To run these tests, one should have the correct Python environment, e.g., built 
 ## Contributing
 
 The `.py` files in this repository follow a relaxed PEP8 style guide. You can check compliance using
-the .pylintrc at repo root.
+the .pylintrc at repo root:
+
+    $pylint <file>.py --rcfile=.pylintrc
+
+## Future Work
+
+- Further test multi-Producer setup with Load Balancer
+- Further test multi-node Kafka cluster
+- Add web-based visualizations for streaming data
+- Add IAAC for cloud migration

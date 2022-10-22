@@ -36,11 +36,13 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         help;
         exit 0
         ;;
-        -*|--*)
+        -*)
         echo "Unknown option $1"
         exit 1
         ;;
         *)
+        shift
+        ;;
     esac
 done
 
@@ -48,12 +50,12 @@ done
 # MAIN                                            #
 ###################################################
 
-container_names=$(sudo docker ps -a --format "{{.Names}}" | grep vehicle[0-9]*)
+container_names=$(sudo docker ps -a --format "{{.Names}}" | grep -e "vehicle[0-9]\+")
 
-for container in $container_names:
+for container in $container_names
 do
-    printf "Tearing down $container ..."
-    sudo docker stop "$container"
-    sudo docker rm "$container"
+    printf "Tearing down %s ..." "$container"
+    sudo docker stop "$container" > /dev/null
+    sudo docker rm "$container" > /dev/null
     printf "Done.\n"
 done

@@ -88,11 +88,14 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        -*|--*)
+        -*)
         echo "Unknown option $1"
         exit 1
         ;;
         *)
+        echo "Bad positional argument."
+        exit 1
+        ;;
     esac
 done
 
@@ -105,7 +108,7 @@ container_names=$(sudo docker ps -a --format "{{.Names}}")
 ############  CONSUMER TEARDOWN ############
 if [[ "$container_names" == *"$PRODUCER_NAME"* ]]
 then
-    printf "Stopping $CONSUMER_NAME ..."
+    printf "Stopping %s ..." "$CONSUMER_NAME"
     sudo docker stop "$CONSUMER_NAME">/dev/null
     sudo docker rm "$CONSUMER_NAME">/dev/null
     printf "Done.\n\n"
@@ -114,7 +117,7 @@ fi
 ############  PRODUCER TEARDOWN ############
 if [[ "$container_names" == *"$PRODUCER_NAME"* ]]
 then
-    printf "Stopping $PRODUCER_NAME ..."
+    printf "Stopping %s ..." "$PRODUCER_NAME"
     sudo docker stop "$PRODUCER_NAME">/dev/null
     sudo docker rm "$PRODUCER_NAME">/dev/null
     printf "Done.\n\n"
@@ -123,7 +126,7 @@ fi
 ############  POSTGRES TEARDOWN ############
 if [[ "$container_names" == *"$POSTGRES_NAME"* ]]
 then
-    printf "Stopping $POSTGRES_NAME ..."
+    printf "Stopping %s ..." "$POSTGRES_NAME"
     sudo docker stop "$POSTGRES_NAME">/dev/null
     sudo docker rm "$POSTGRES_NAME">/dev/null
     printf "Done.\n\n"
@@ -132,7 +135,7 @@ fi
 ############  KAFKA TEARDOWN ############
 if [[ "$container_names" == *"$KAFKA_NAME"* ]]
 then
-    printf "Stopping $KAFKA_NAME ..."
+    printf "Stopping %s ..." "$KAFKA_NAME"
     sudo docker stop "$KAFKA_NAME">/dev/null
     sudo docker rm "$KAFKA_NAME">/dev/null
     printf "Done.\n\n"
@@ -141,7 +144,7 @@ fi
 ############ ZOOKEEPER TEARDOWN ############
 if [[ "$container_names" == *"$ZOOKEEPER_NAME"* ]]
 then
-    printf "Stopping $ZOOKEEPER_NAME ..."
+    printf "Stopping %s ..." "$ZOOKEEPER_NAME"
     sudo docker stop "$ZOOKEEPER_NAME">/dev/null
     sudo docker rm "$ZOOKEEPER_NAME">/dev/null
     printf "Done.\n\n"
@@ -151,7 +154,7 @@ fi
 docker_networks=$(sudo docker network ls --format "{{.Name}}")
 if [[ "$docker_networks" == *"$DOCKER_NETWORK"* ]]
 then
-    printf "Removing Docker network $DOCKER_NETWORK ..."
+    printf "Removing Docker network %s ..." "$DOCKER_NETWORK"
     sudo docker network rm "$DOCKER_NETWORK">/dev/null
     printf "Done.\n\n"
 fi
