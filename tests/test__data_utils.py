@@ -18,7 +18,7 @@ From the command line, navigate to the repo root and execute::
 import pytest
 
 import set_paths       # pylint: disable=W0611
-from data_utils import (Formatter, SqlQueryBuilder)
+from data_utils import (Formatter, SqlQueryBuilder)   # pylint: disable=C0411
 
 # %% TESTS
 
