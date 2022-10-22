@@ -5,10 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.0.2] - (Pending)
+## [0.0.2] - 2022-10-22
+
+Containerized the architecture for a purely local configuration.
+
 ### Added
 
+- launch_infra.sh: a bash script to initialize infrastructural containers
+- launch_fleet.sh: a bash script to initialize Vehicle container(s)
+- teardown_infra.sh: a bash script to tear down infrastructural containers
+- teardown_fleet.sh: a bash script to tear down Vehicle container(s)
+- teardown.sh: a bash script to stop and remove infrastructural containers
+- config.master: a top-level config file to set all manner of config (JSON)
+- src/
+    - db/
+        - config.db: a database-specific config file (can be overridden by master)
+        - db_init.sh: a bash script that creates the database container
+        - Dockerfile
+    - consumer/
+        - config.consumer: a KafkaConsumer specific config file (can be overridden by master)
+        - consumer_init.sh: a bash script that creates the consumer container
+        - Dockerfile
+    - producer/
+        - config.producer: a KafkaProducer specific config file (can be overridden by master)
+        - producer_init.sh: a bash script that creates the producer container
+        - Dockerfile
+    - vehicle/
+        - config.vehcile: a Vehicle-specific config file
+
 ### Changed
+
+- Broke down master requirements.txt into per-container requirements.txt(s)
+- Added event count to HTTP Server display for GET requests
+- Kafka server now has both internal and external port mappings for inter-container functionality
 
 ### Deprecated
 

@@ -1,0 +1,13 @@
+{
+    "DOCKER_NETWORK": "av_telemetry",
+    "PRODUCER_NAME": "producer",
+    "PRODUCER_HTTP_RULE": "events",
+    "PRODUCER_INGRESS_HTTP_LISTENER": "0.0.0.0",
+    "PRODUCER_INIT_WAIT": 1,
+    "PRODUCER_PORT_MAP": "5000:5000",
+    "KAFKA_TOPIC": "test_topic",
+    "KAFKA_NAME": "kafka-server",
+    "KAFKA_EXTERNAL_PORT_MAP": "9092:9092",
+    "KAFKA_SERVER": "kafka-server:9092",
+    "SEMVER_TAG": "0.0.2"
+}

@@ -1,0 +1,14 @@
+{
+    "PRODUCER_HTTP_SERVER": "172.18.0.1",
+    "PRODUCER_PORT_MAP": "5000:5000",
+    "PRODUCER_HTTP_RULE": "events",
+    "VEHICLE_LOG_LEVEL": 20,
+    "VEHICLE_MAKE": null,
+    "VEHICLE_MODEL": null,
+    "VEHICLE_VELOCITY_X": 1.2,
+    "VEHICLE_VELOCITY_Y": 3.6,
+    "VEHICLE_VELOCITY_Z": 0,
+    "VIN": null,
+    "AUTO_START": false,
+    "SEMVER_TAG": "0.0.2"
+}

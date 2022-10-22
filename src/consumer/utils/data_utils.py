@@ -11,7 +11,7 @@ This module contains a classes for data sanitization.
 from urllib.parse import parse_qs
 import re
 
-from constants import DEFAULT_REPLACEMENT_CHAR
+# from constants import DEFAULT_REPLACEMENT_CHAR
 
 # %% CLASSES
 
@@ -50,7 +50,7 @@ class Formatter:
         return final_parsed_dict
 
     @classmethod
-    def format_data_label(cls, data_label=None, sub=DEFAULT_REPLACEMENT_CHAR):
+    def format_data_label(cls, data_label=None, sub='_'):
         """Format a data label to follow some convention.
 
         This will throw a TypeError if the supplied data_label is not str.

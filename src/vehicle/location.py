@@ -24,6 +24,27 @@ DEFAULT_ORIGIN_X = 0
 DEFAULT_ORIGIN_Y = 0
 DEFAULT_ORIGIN_Z = 0
 
+# %% FUNCTIONS
+
+def format_data_value(data_value):
+    """Format a data value into the correct type.
+
+    Parameters:
+        data_value (Any): The data to format.
+
+    Returns:
+        Any: The type-casted data value.
+    """
+
+    if isinstance(data_value, str):
+        if data_value.isdigit():
+            return int(data_value)
+        try:
+            return float(data_value)
+        except ValueError:
+            return data_value
+    return data_value
+
 # %% CLASSES
 
 
@@ -59,9 +80,9 @@ class Location:
         self.x = None
         self.y = None
         self.z = None
-        self.vx_calc = vx
-        self.vy_calc = vy
-        self.vz_calc = vz
+        self.vx_calc = format_data_value(vx)
+        self.vy_calc = format_data_value(vy)
+        self.vz_calc = format_data_value(vz)
         self.vx_rand = np.random.rand()
         self.vy_rand = np.random.rand()
         self.vz_rand = np.random.rand()
@@ -123,7 +144,7 @@ class Location:
 
         if isinstance(self.vx_calc, (int, float)):
             return self.vx_rand*self.vx_calc
-        if isinstance(self.vx_calc, Callable):
+        if isinstance(self.vx_calc, Callable):    # pylint: disable=W1116
             try:
                 return self.vx_calc(self.elapsed_time)
             except AttributeError:
@@ -146,7 +167,7 @@ class Location:
 
         if isinstance(self.vy_calc, (int, float)):
             return self.vy_rand*self.vy_calc
-        if isinstance(self.vy_calc, Callable):
+        if isinstance(self.vy_calc, Callable):    # pylint: disable=W1116
             try:
                 return self.vy_calc(self.elapsed_time)
             except AttributeError:
@@ -169,7 +190,7 @@ class Location:
 
         if isinstance(self.vz_calc, (int, float)):
             return self.vz_rand*self.vz_calc
-        if isinstance(self.vz_calc, Callable):
+        if isinstance(self.vz_calc, Callable):    # pylint: disable=W1116
             try:
                 return self.vz_calc(self.elapsed_time)
             except AttributeError:

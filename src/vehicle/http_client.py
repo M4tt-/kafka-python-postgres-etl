@@ -11,10 +11,9 @@ This module contains a class ``HTTPClient`` to make HTTP requests.
 
 import requests
 
-from constants import (DEFAULT_HTTP_PORT,
-                       DEFAULT_HTTP_TIMEOUT,
-                       DEFAULT_URL_RULE
-)
+# %% CONSTANTS
+
+DEFAULT_HTTP_TIMEOUT = 10
 
 # %% CLASSES
 
@@ -24,8 +23,8 @@ class HTTPClient:
 
     def __init__(self,
                  http_server=None,
-                 http_port=DEFAULT_HTTP_PORT,
-                 http_rule=DEFAULT_URL_RULE):
+                 http_port=None,
+                 http_rule=None):
         """Constructor.
 
         Parameters:

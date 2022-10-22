@@ -45,6 +45,7 @@ Recommended pytest_opts:
 # pylint: disable=W0621
 # pylint: disable=C0411
 # pylint: disable=R0201
+
 # %% IMPORTS
 import json
 from multiprocessing import Process
@@ -54,12 +55,12 @@ import requests
 import time
 
 import set_paths       # pylint: disable=W0611
-from constants import (ENV_VAR_CONFIG,
-                       PROCESS_INIT_DELAY,
-                       PROCESS_KILL_DELAY
+from conftest import (ENV_VAR_CONFIG,
+                      PROCESS_INIT_DELAY,
+                      PROCESS_KILL_DELAY
 )
 from http_client import HTTPClient
-from http_server import HTTPServer
+from producer import Producer
 
 # %% CONSTANTS
 
@@ -79,24 +80,20 @@ def config(conf):
     return config_json
 
 @pytest.fixture(scope='module')
-def my_http_client(config):
+def my_http_client():
     """HTTPClient to use for testing."""
-    return HTTPClient(http_server=config.get("server"),
-                      http_port=config.get("port"),
-                      http_rule=config.get("rule"))
+    return HTTPClient()
 
 @pytest.fixture(scope='module')
-def my_http_server(config):
-    """HTTPServer to use for testing."""
-    return HTTPServer(ingress=config.get("host"),
-                      http_port=config.get("port"),
-                      http_rule=config.get("rule"))
+def my_producer():
+    """Producer to use for testing."""
+    return Producer()
 
 @pytest.fixture(autouse=True, scope='module')
-def server_process(my_http_server):
-    """HTTPServer process object complete with teardown procedure."""
+def server_process(my_producer):
+    """Producer process object complete with teardown procedure."""
 
-    server_process = Process(target=my_http_server.start, daemon=True)
+    server_process = Process(target=my_producer.start, daemon=True)
     server_process.start()
     time.sleep(PROCESS_INIT_DELAY)
     yield server_process
@@ -106,7 +103,7 @@ def server_process(my_http_server):
         server_process.terminate()
     time.sleep(PROCESS_KILL_DELAY)
 
-
+@pytest.mark.skip(reason="Needs to be revised to accomodate Kafka cluster.")
 class TestHTTPClient:
     """Test the methods of HTTPClient."""
 

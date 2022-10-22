@@ -1,0 +1,9 @@
+{
+    "DOCKER_NETWORK": "av_telemetry",
+    "POSTGRES_NAME": "postgres",
+    "POSTGRES_INIT_WAIT": 1,
+    "POSTGRES_USER": "postgres",
+    "POSTGRES_PASSWORD": "mysecretpassword",
+    "POSTGRES_PORT_MAP": "5432:5432",
+    "SEMVER_TAG": "0.0.2"
+}

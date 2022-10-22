@@ -13,7 +13,10 @@ import pytest
 
 # %% CONSTANTS
 
-DEFAULT_CONFIG = "tests/test_config.json"
+DEFAULT_CONFIG = "config.master"
+ENV_VAR_CONFIG = 'PYTEST_CONFIG'
+PROCESS_INIT_DELAY = 0.05       # seconds
+PROCESS_KILL_DELAY = 0.05       # seconds
 
 # %% FUNCTIONS AND FIXTURES
 

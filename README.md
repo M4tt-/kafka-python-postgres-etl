@@ -1,60 +1,88 @@
-# data-science-pipelines
+# kafka-python-postgres-etl
 
-## The Idea
+This project demonstrates a containerized, Python-based, streaming ETL pipeline. It is written in Python 3.6 (see `requirements.txt`).
 
-- Use Apache Kafka to create a distributed, streaming data pipeline
-- The data sources should autonomously send data to a web server at their own rate with data in their own formats via HTTP
-- The web server should be RESTful and able to ingest the incoming streams concurrently (Kafka Connect REST API)
-- The web server should send the raw data to a data store (ELT)
-- The web server should use the Kafka Streams API to process the data into a uniform format before sending it to SQL (ETL)
+The main goal is to monitor and store real-time streaming data from a fleet of vehicles.
+
+Each vehicle (`vehicle.Vehicle`) produces some data (in this revision, just position and speed over time plus some metadata) at small, regular time intervals.
+Each vehicle's data is sent to an HTTP server (`producer.Producer`), where it is transformed into a JSON string and published to a Kafka topic (default `test_topic`).
+A Kafka consumer (`consumer.Consumer`) will consume the published JSON string from the topic, structure the data, and then insert it into a PostgreSQL database.
 
 ## Getting Started
 
-1. Ensure you are using the right environment (Python 3.6 w/ requirements.txt satisfied).
-2. If running locally, ensure PostgreSQL and postgresql-contrib are installed with the postgres service running:
+Ensure a Docker daemon is running and there are no services occupying ports
+9092, 5432, 2181, and 5000 (if these ports are not available, the host:container port mapping can be modified in `config.master`).
 
-    sudo apt update
-    sudo apt install postgresql postgresql-contrib
+Pull the master branch and navigate to repo root. Execute:
 
-    There should also be a role to authenticate with via md5.
-    If this is a first-time set up, here's a quick solution:
+    $bash launch_infra.sh
+    $bash launch_fleet.sh
 
-    - Open postgres config `/etc/postgresql/10/pg_hba.conf`
-    - Replace this line
-        local   all             postgres                         peer
-      With this line
-        local   all             postgres                         trust
-    - sudo systemctl start postgresql.service
-    - sudo -u postgres psql
-    - ALTER USER postgres password '<your_password>';
-    - Exit postgres ('\q')
-    - Open postgres config `/etc/postgresql/10/pg_hba.conf`
-    - Replace this line:
-         local   all             postgres                         trust
-      With this line:
-         local   all             postgres                         md5
-    - Restart the server: sudo systemctl restart postgresql.service
-    - Verify the authentication is valid by typing psql -U postgres and entering the password when prompted.
-3. If running locally, ensure Kafka is installed:
+>Can use -v flag for verbosity.
 
-   - Get JRE8:
-     sudo apt-get update
-     sudo apt-get install openjdk-8-jre
-   - Set JAVA_HOME env car to jre8 dir:
-     export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
-   - Download and extract Kafka:
-     sudo curl --output ~/Downloads/kafka_2.13-3.2.1.tar.gz
-     tar -xzf kafka_2.13-3.2.1.tgz
+When you're finished, you can similarly tear down the containers:
 
-4. Run ``src/kafka/init.sh`` to get Kafka up and running locally.
-5. Run ``init_sql.sh -u PGUSER -p PGPASS`` to set up sql database/table.
-6. Run ``python src/launch_server.py`` in separate process to launch HTTP server (receive dummy data).
-7. Run ``python src/launch_consumer.py`` in separate process to launch KafkaConsumer (consume dummy data).
-8. Run ``python src/launch_client.py`` in separate process to launch HTTP Client (to send dummy data).
+    $bash teardown_fleet.sh
+    $bash teardown_infra.sh
 
+## Architecture
 
+![kafka-python-postgres-etl](img/kafka-python-postgres-etl_arch.JPG)
 
-## Tests
+A dichotomy can be made of this project's components: server infrastructure (or just "infrastructure") vs. clients.
 
-Navigate to the root repo folder and execute::
-    ```python -m pytest tests -W ignore::DeprecationWarning -v```
+### Infrastructure
+
+The server infrastructure has one or more of the following containers:
+
+- [m4ttl33t/postgres](https://hub.docker.com/r/m4ttl33t/postgres) -- PostgreSQL data store (small extension of official image)
+- [m4ttl33t/consumer](https://hub.docker.com/r/m4ttl33t/consumer) -- Kafka Consumer / SQL writer
+- [m4ttl33t/producer](https://hub.docker.com/r/m4ttl33t/producer)-- Kafka Producer / HTTP server
+- [bitnami/kafka:latest](https://hub.docker.com/r/bitnami/kafka) -- Kafka broker(s)
+- [bitnami/zookeeper:latest](https://hub.docker.com/r/bitnami/zookeeper) -- Zookeeper to administrate Kafka brokers
+
+As of this revision, this infrastructure is "single-node" and operates locally for demonstration purposes. Each container
+communicates over a Docker bridge network. Ideally, most (if not all) of this infrastructure should reside in the cloud across
+several machines.
+
+### Clients
+
+A fleet of vehicles (clients) are realized by one or more of the following containers:
+
+- [m4ttl33t/vehicle](https://hub.docker.com/r/m4ttl33t/vehicle) -- HTTP client that constantly streams its own data
+
+As of this revision, many of these containers can be instantiated on many different machines. The only requirement is
+that they are given the correct host address of the HTTP server, e.g., the `producer` container, to send requests to.
+
+## Testing
+
+### End-to-End Tests
+
+If you've followed the instructions in the **Getting Started** section, there are a few things you can do to check
+that things are working as expected:
+
+1. Enter the relevant HTTP server URL into your browser. There should be a "welcome message" with an event counter that
+  increments every few seconds. Unless you've changed any `config.*` files, the port and endpoint is 5000 and 'events', respectively,
+  and the IP address should be printed to stdout (or stored in `/tmp/launch_infra_http_server.log`).
+
+>Example: 172.60.49.4:5000/events
+
+2. Interact with the postgres container directly through bash. you should see the entries grow every few seconds. Unless you've changed any `config.*` files,
+
+        sudo docker exec -it -u postgres postgres bash
+        psql
+        \c av_telemetry
+        SELECT * FROM diag;
+
+### Unit Tests
+
+There are many unit tests contained in the `tests` folder. Navigate to the root repo folder and execute:
+
+    python -m pytest tests -W ignore::DeprecationWarning -v
+
+To run these tests, one should have the correct Python environment, e.g., built from `requirements.txt` with Python 3.6
+
+## Contributing
+
+The `.py` files in this repository follow a relaxed PEP8 style guide. You can check compliance using
+the .pylintrc at repo root.

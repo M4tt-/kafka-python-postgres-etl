@@ -10,29 +10,31 @@ This module contains a class that produces simulated data from a vehicle.
 """
 
 # %% IMPORTS
+
+import json
+import os
 import random
 import string
-import threading
 import time
 
-from constants import (DEFAULT_HTTP_PORT,
-                       DEFAULT_URL_RULE,
-                       DEFAULT_VEHICLE_REPORT_DELAY,
-                       STREAM_METRIC_MAKE,
-                       STREAM_METRIC_MODEL,
-                       STREAM_METRIC_POS_X,
-                       STREAM_METRIC_POS_Y,
-                       STREAM_METRIC_POS_Z,
-                       STREAM_METRIC_SPEED,
-                       STREAM_METRIC_TIME,
-                       STREAM_METRIC_VIN
-)
-from app.http_client import HTTPClient    # pylint: disable=C0411
+from http_client import HTTPClient    # pylint: disable=C0411
 from location import Location
 
 # %% CONSTANTS
 
+CONFIG_FILE = "config.vehicle"
+DEFAULT_HTTP_PORT = 5000
 DEFAULT_MAKE = 'Ford'
+DEFAULT_VEHICLE_REPORT_DELAY = 3     # seconds
+STREAM_METRIC_ID = "id"
+STREAM_METRIC_MAKE = "make"
+STREAM_METRIC_MODEL = "model"
+STREAM_METRIC_POS_X = "position_x"
+STREAM_METRIC_POS_Y = "position_y"
+STREAM_METRIC_POS_Z = "position_z"
+STREAM_METRIC_SPEED = "speed"
+STREAM_METRIC_TIME = "timestamp"
+STREAM_METRIC_VIN = "vin"
 MODEL_CHOICES = ['Maverick', 'Escape', 'F-150', 'Explorer', 'Mustang',
                  'Bronco', 'Edge', 'Expedition']
 VIN_LEN = 17
@@ -51,53 +53,63 @@ def generate_vin():
         vin += random.choice(string.ascii_uppercase + string.digits)
     return vin
 
-
 # %% CLASSES
 
 
-class Vehicle(threading.Thread):
+class Vehicle:
     """A vehicle that can stream its own performance metrics."""
 
     # -------------------------------------------------------------------------
-    def __init__(self,
-                 http_server=None,
-                 http_port=DEFAULT_HTTP_PORT,
-                 http_rule=DEFAULT_URL_RULE,
-                 make=DEFAULT_MAKE,
-                 model=None,
-                 auto_start=False):
-        """Constructor.
+    def __init__(self):
+        """Constructor."""
 
-        Parameters:
-            http_server (str): The HTTP server to communicate with.
-            http_port (int): The port.
-            http_rule (str): The rule (page) to make requests to.
-            vin (str): The vehicle identification number.
-            make (str): The make of the vehicle.
-            model (str): The model of the vehicle.
-            auto_start (bool): If True, start the vehicle trip.
+        self.vin = generate_vin()
+        self.get_config()
+        if self.make is None:
+            self.make = DEFAULT_MAKE
+        if self.model is None:
+            self.model = random.choice(MODEL_CHOICES)
+        self.driving = False
+        self.http_client = HTTPClient(http_server=self.http_server,
+                                      http_port=self.http_port,
+                                      http_rule=self.http_rule)
+        self.gps = Location(vx=self.velocity_x,
+                            vy=self.velocity_y,
+                            vz=self.velocity_z)
+        if self.auto_start:
+            self.start_trip()
+
+    # -------------------------------------------------------------------------
+    def get_config(self):
+        """Try to get configuration details through various, prioritized means.
+
+        Priority 1: Check for environment variables.
+        Priority 2: Check default config file.
 
         Returns:
-            Vehicle: instance.
+            None.
         """
 
-        super().__init__(daemon=True)
-        with threading.Lock():
-            self.vin = generate_vin()
-        self.make = make
-        if model is not None:
-            self.model = model
-        else:
-            with threading.Lock():
-                self.model = random.choice(MODEL_CHOICES)
-        self.auto_start = auto_start
-        self.driving = False
-        self.http_client = HTTPClient(http_server=http_server,
-                                      http_port=http_port,
-                                      http_rule=http_rule)
-        self.gps = Location()
-        if auto_start:
-            self.start_trip()
+        def get_env_var(key):
+            try:
+                var = os.environ[key]
+            except KeyError:
+                with open(CONFIG_FILE, 'r') as config:
+                    try:
+                        var = json.load(config)[key]
+                    except KeyError:
+                        return None
+            return var
+
+        self.http_server = get_env_var('PRODUCER_HTTP_SERVER')
+        self.http_port = get_env_var('PRODUCER_PORT_MAP').split(':')[1]
+        self.http_rule = get_env_var('PRODUCER_HTTP_RULE')
+        self.make = get_env_var('VEHICLE_MAKE')
+        self.model = get_env_var('VEHICLE_MODEL')
+        self.auto_start = get_env_var('AUTO_START')
+        self.velocity_x = get_env_var('VEHICLE_VELOCITY_X')
+        self.velocity_y = get_env_var('VEHICLE_VELOCITY_Y')
+        self.velocity_z = get_env_var('VEHICLE_VELOCITY_Z')
 
     # -------------------------------------------------------------------------
     def get_position(self):
@@ -129,7 +141,7 @@ class Vehicle(threading.Thread):
 
         self.gps.start_trip()
         self.driving = True
-        self.start()
+        self.run()
 
     # -------------------------------------------------------------------------
     def stop_trip(self):
@@ -164,7 +176,7 @@ class Vehicle(threading.Thread):
 
     # -------------------------------------------------------------------------
     def run(self):
-        """Main thread loop.
+        """Main loop.
 
         Returns:
             None.
