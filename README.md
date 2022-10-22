@@ -100,6 +100,9 @@ the .pylintrc at repo root:
 
 ## Future Work
 
+This project is done all on my own time outside of work hours, so it's not where I want it to be (but it will be one day soon!).
+Near-future changes to come:
+
 - Further test multi-Producer setup with Load Balancer
 - Further test multi-node Kafka cluster
 - Add web-based visualizations for streaming data
