@@ -18,6 +18,13 @@ Pull the master branch and navigate to repo root. Execute:
     $bash launch_infra.sh
     $bash launch_fleet.sh
 
+>Can use -v flag for verbosity.
+
+When you're finished, you can similarly tear down the containers:
+
+    $bash teardown_fleet.sh
+    $bash teardown_infra.sh
+
 ## Architecture
 
 ![kafka-python-postgres-etl](img/kafka-python-postgres-etl_arch.JPG)
@@ -60,7 +67,7 @@ that things are working as expected:
 
 >Example: 172.60.49.4:5000/events
 
-2. Interact with the postgres container directly through bash - you should see the entries grow every few seconds:
+2. Interact with the postgres container directly through bash. you should see the entries grow every few seconds. Unless you've changed any `config.*` files,
 
         sudo docker exec -it -u postgres postgres bash
         psql

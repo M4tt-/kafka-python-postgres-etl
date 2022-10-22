@@ -9,5 +9,5 @@
     "KAFKA_NAME": "kafka-server",
     "KAFKA_EXTERNAL_PORT_MAP": "9092:9092",
     "KAFKA_SERVER": "kafka-server:9092",
-    "SEMVER_TAG": "0.0.1"
+    "SEMVER_TAG": "0.0.2"
 }

@@ -66,6 +66,8 @@ class Producer(KafkaProducer):
                         var = json.load(config)[key]
             return var
 
+        http_port_map = get_env_var("PRODUCER_PORT_MAP")
+        http_ingress_port = http_port_map.split(':')[1]
         kafka_name = get_env_var('KAFKA_NAME')
         kafka_port_map = get_env_var('KAFKA_EXTERNAL_PORT_MAP')
         kafka_port = kafka_port_map.split(':')[1]
@@ -73,7 +75,7 @@ class Producer(KafkaProducer):
         self.kafka_server = kafka_server
         self.kafka_topic = get_env_var('KAFKA_TOPIC')
         self.ingress_listener = get_env_var("PRODUCER_INGRESS_HTTP_LISTENER")
-        self.ingress_port = kafka_port
+        self.ingress_port = http_ingress_port
         self.http_rule = get_env_var("PRODUCER_HTTP_RULE")
 
     def process_event(self):   # pylint: disable=R0201

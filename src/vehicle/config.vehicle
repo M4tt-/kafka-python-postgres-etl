@@ -9,5 +9,6 @@
     "VEHICLE_VELOCITY_Y": 3.6,
     "VEHICLE_VELOCITY_Z": 0,
     "VIN": null,
-    "AUTO_START": false
+    "AUTO_START": false,
+    "SEMVER_TAG": "0.0.2"
 }

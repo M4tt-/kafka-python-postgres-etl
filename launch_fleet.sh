@@ -71,12 +71,6 @@ VERBOSITY=0
 # CONFIG SOURCING FROM PARAMS                     #
 ###################################################
 
-if [[ $# -eq 0 ]]
-then
-    printf "ERROR: At least one positional arguments <HTTP_SERVER> must be given.\n"
-    exit 1
-fi
-
 while (( "$#" )); do   # Evaluate length of param array and exit at zero
     case $1 in
         -h|--help)
@@ -185,14 +179,14 @@ do
         -e PYTHONUNBUFFERED=1 \
         -e PRODUCER_HTTP_SERVER="$PRODUCER_HTTP_SERVER" \
         -e PRODUCER_HTTP_RULE="$PRODUCER_HTTP_RULE" \
-        m4ttl33t/vehicle:"${SEMVER_TAG}"
+        -d m4ttl33t/vehicle:"${SEMVER_TAG}"
     else
         sudo docker run --name "${container_name}" \
         --network "${DOCKER_NETWORK}" \
         -e PYTHONUNBUFFERED=1 \
         -e PRODUCER_HTTP_SERVER="$PRODUCER_HTTP_SERVER" \
         -e PRODUCER_HTTP_RULE="$PRODUCER_HTTP_RULE" \
-        m4ttl33t/vehicle:"${SEMVER_TAG}" > /dev/null
+        -d m4ttl33t/vehicle:"${SEMVER_TAG}" > /dev/null
     fi
     printf "  Done.\n"
 done

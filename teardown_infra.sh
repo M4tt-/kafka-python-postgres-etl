@@ -17,7 +17,7 @@
 #    4. m4ttl33t/postgres: Postgres data store
 #    5. m4ttl33t/consumer: KafkaConsumer
 
-# Usage: see teardown.sh --help
+# Usage: see teardown_infra.sh --help
 
 ###################################################
 # FUNCTION: HELP MENU                             #
@@ -25,9 +25,9 @@
 
 help() {
 
-    printf "\nteardown.sh -- Tear down the data pipeline infrastructure (containers).\n\n"
+    printf "\nteardown_infra.sh -- Tear down the data pipeline infrastructure (containers).\n\n"
 
-    printf "Usage: bash teardown.sh [options]\n\n"
+    printf "Usage: bash teardown_infra.sh [options]\n\n"
     printf "Options:\n"
     printf "  -n, --network: Docker network name.\n"
     printf "  --consumer-name: KafkaConsumer container name.\n"

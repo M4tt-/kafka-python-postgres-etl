@@ -5,5 +5,5 @@
     "POSTGRES_USER": "postgres",
     "POSTGRES_PASSWORD": "mysecretpassword",
     "POSTGRES_PORT_MAP": "5432:5432",
-    "SEMVER_TAG": "0.0.1"
+    "SEMVER_TAG": "0.0.2"
 }
