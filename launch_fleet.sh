@@ -32,9 +32,14 @@ help() {
     printf "  -t, --tag: Semver tag name of Docker images to pull.\n"
     printf "  -n, --network: Docker network name.\n"
     printf "  --http-log-file: The full path to store the log of HTTP server host name.\n"
+    printf "  --http-host: The HTTP server host name. Overrides anything found in http-log-file.\n"
     printf "  --num-vehicles: The number of Vehicle containers to spin up.\n"
     printf "  --producer-http-rule: The http endpoint (URL suffix) for KafkaProducer (HTTP server).\n"
-    printf "  --producer-port-map: The KafkaProducer port map, e.g., 5000:5000.\n"
+    printf "  --producer-http-port: The KafkaProducer port, e.g., 5000.\n"
+    printf "  --vehicle-report-delay: The delay between http requests of vehicle diagnostics.\n"
+    printf "  --vehicle-velocity-x: The vehicle velocity along x axis in m/s.\n"
+    printf "  --vehicle-velocity-y: The vehicle velocity along y axis in m/s.\n"
+    printf "  --vehicle-velocity-z: The vehicle velocity along z axis in m/s.\n"
 }
 
 ###################################################
@@ -49,8 +54,12 @@ dump_config() {
     printf "NUM_VEHICLES: %s\n" "$NUM_VEHICLES"
     printf "PRODUCER_HTTP_SERVER: %s\n" "$PRODUCER_HTTP_SERVER"
     printf "PRODUCER_HTTP_RULE: %s\n" "$PRODUCER_HTTP_RULE"
-    printf "PRODUCER_PORT_MAP: %s\n" "$PRODUCER_PORT_MAP"
+    printf "PRODUCER_HTTP_PORT: %s\n" "$PRODUCER_HTTP_PORT"
     printf "SEMVER_TAG: %s\n" "$SEMVER_TAG"
+    printf "VEHICLE_REPORT_DELAY: %s\n" "$VEHICLE_REPORT_DELAY"
+    printf "VEHICLE_VELOCITY_X: %s\n" "$VEHICLE_VELOCITY_X"
+    printf "VEHICLE_VELOCITY_Y: %s\n" "$VEHICLE_VELOCITY_Y"
+    printf "VEHICLE_VELOCITY_Z: %s\n" "$VEHICLE_VELOCITY_Z"
     printf "VERBOSITY: %s\n\n" "$VERBOSITY"
 }
 
@@ -60,10 +69,15 @@ dump_config() {
 
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
 HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE config.master)
+HTTP_HOST=""
 NUM_VEHICLES=1
 PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE config.master)
 PRODUCER_HTTP_SERVER=$(tail -1 "$HTTP_LOG_FILE")
-PRODUCER_PORT_MAP=$(jq -r .PRODUCER_PORT_MAP config.master)
+PRODUCER_HTTP_PORT=$(jq -r .PRODUCER_CONTAINER_PORT config.master)
+VEHICLE_REPORT_DELAY=$(jq -r .VEHICLE_REPORT_DELAY config.master)
+VEHICLE_VELOCITY_X=$(jq -r .VEHICLE_VELOCITY_X config.master)
+VEHICLE_VELOCITY_Y=$(jq -r .VEHICLE_VELOCITY_Y config.master)
+VEHICLE_VELOCITY_Z=$(jq -r .VEHICLE_VELOCITY_Z config.master)
 SEMVER_TAG=$(jq -r .SEMVER_TAG config.master)
 VERBOSITY=0
 
@@ -87,13 +101,18 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
+        --http-host)
+        HTTP_HOST="$2"
+        shift # past argument
+        shift # past value
+        ;;
         --producer-http-rule)
         PRODUCER_HTTP_RULE="$2"
         shift # past argument
         shift # past value
         ;;
-        --producer-port-map)
-        PRODUCER_PORT_MAP="$2"
+        --producer-http-port)
+        PRODUCER_HTTP_PORT="$2"
         shift # past argument
         shift # past value
         ;;
@@ -104,6 +123,26 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         ;;
         -t|--tag)
         SEMVER_TAG="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --vehicle-report-delay)
+        VEHICLE_REPORT_DELAY="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --vehicle-velocity_x)
+        VEHICLE_VELOCITY_X="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --vehicle-velocity_y)
+        VEHICLE_VELOCITY_Y="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --vehicle-velocity_z)
+        VEHICLE_VELOCITY_Z="$2"
         shift # past argument
         shift # past value
         ;;
@@ -140,7 +179,7 @@ if ! [[ "$NUM_VEHICLES" =~ ^[0-9]+$ ]]
 fi
 
 ############  VEHICLE INIT ############
-
+printf "Preparing %s Vehicles ...\n" "$NUM_VEHICLES"
 if [[ "$VERBOSITY" == 1 ]]
 then
     printf "Creating %s container(s) ...\n" "$NUM_VEHICLES"
@@ -170,25 +209,38 @@ do
         fi
     fi
 
+    if [[ "$HTTP_HOST" == "" ]]
+    then
+        server="$PRODUCER_HTTP_SERVER"
+    else
+        server="$HTTP_HOST"
+    fi
     # Instantiate the new container
     if [[ "$VERBOSITY" == 1 ]]
     then
         sudo docker run --name "${container_name}" \
         --network "${DOCKER_NETWORK}" \
         -e PYTHONUNBUFFERED=1 \
-        -e PRODUCER_HTTP_SERVER="$PRODUCER_HTTP_SERVER" \
+        -e PRODUCER_HTTP_SERVER="$server" \
         -e PRODUCER_HTTP_RULE="$PRODUCER_HTTP_RULE" \
+        -e PRODUCER_HTTP_PORT="$PRODUCER_HTTP_PORT" \
+        -e VEHICLE_REPORT_DELAY="$VEHICLE_REPORT_DELAY" \
+        -e VEHICLE_VELOCITY_X="$VEHICLE_VELOCITY_X" \
+        -e VEHICLE_VELOCITY_Y="$VEHICLE_VELOCITY_Y" \
+        -e VEHICLE_VELOCITY_Z="$VEHICLE_VELOCITY_Z" \
         -d m4ttl33t/vehicle:"${SEMVER_TAG}"
     else
         sudo docker run --name "${container_name}" \
         --network "${DOCKER_NETWORK}" \
         -e PYTHONUNBUFFERED=1 \
-        -e PRODUCER_HTTP_SERVER="$PRODUCER_HTTP_SERVER" \
+        -e PRODUCER_HTTP_SERVER="$server" \
         -e PRODUCER_HTTP_RULE="$PRODUCER_HTTP_RULE" \
+        -e PRODUCER_HTTP_PORT="$PRODUCER_HTTP_PORT" \
+        -e VEHICLE_REPORT_DELAY="$VEHICLE_REPORT_DELAY" \
+        -e VEHICLE_VELOCITY_X="$VEHICLE_VELOCITY_X" \
+        -e VEHICLE_VELOCITY_Y="$VEHICLE_VELOCITY_Y" \
+        -e VEHICLE_VELOCITY_Z="$VEHICLE_VELOCITY_Z" \
         -d m4ttl33t/vehicle:"${SEMVER_TAG}" > /dev/null
     fi
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        printf "  Done.\n"
-    fi
+    printf "  Done.\n"
 done

@@ -28,8 +28,8 @@ help() {
     printf "  --postgres-name: The name of the Postgres container.\n"
     printf "  --postgres-user: The name of the Postgres user.\n"
     printf "  --postgres-password: The name of the Postgres password.\n"
-    printf "  --postgres-port-map: The Postgres port map, e.g., 5432:5432.\n"
-    printf "  --postgres-wait: The delay to wait after Postgres is started in seconds.\n"
+    printf "  --postgres-container-port: The Postgres container port, e.g., 5432.\n"
+    printf "  --postgres-host-port: The Postgres host port, e.g., 5432.\n"
 }
 
 ###################################################
@@ -41,9 +41,9 @@ dump_config() {
     printf "\nSourced configuration:\n\n"
     printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
     printf "POSTGRES_NAME: %s\n" "$POSTGRES_NAME"
-    printf "POSTGRES_INIT_WAIT: %s\n" "$POSTGRES_INIT_WAIT"
     printf "POSTGRES_PASSWORD: %s\n" "$POSTGRES_PASSWORD"
-    printf "POSTGRES_PORT_MAP: %s\n" "$POSTGRES_PORT_MAP"
+    printf "POSTGRES_CONTAINER_PORT: %s\n" "$POSTGRES_CONTAINER_PORT"
+    printf "POSTGRES_HOST_PORT: %s\n" "$POSTGRES_HOST_PORT"
     printf "POSTGRES_USER: %s\n" "$POSTGRES_USER"
     printf "SEMVER_TAG: %s\n" "$SEMVER_TAG"
 
@@ -63,13 +63,13 @@ get_container_names() {
 # CONFIG SOURCING FROM FILE                       #
 ###################################################
 
-DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.db)
-POSTGRES_NAME=$(jq -r .POSTGRES_NAME config.db)
-POSTGRES_INIT_WAIT=$(jq -r .POSTGRES_INIT_WAIT config.db)
-POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD config.db)
-POSTGRES_PORT_MAP=$(jq -r .POSTGRES_PORT_MAP config.db)
-POSTGRES_USER=$(jq -r .POSTGRES_USER config.db)
-SEMVER_TAG=$(jq -r .SEMVER_TAG config.db)
+DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
+POSTGRES_NAME=$(jq -r .POSTGRES_NAME config.master)
+POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD config.master)
+POSTGRES_CONTAINER_PORT=$(jq -r .POSTGRES_CONTAINER_PORT config.master)
+POSTGRES_HOST_PORT=$(jq -r .POSTGRES_HOST_PORT config.master)
+POSTGRES_USER=$(jq -r .POSTGRES_USER config.master)
+SEMVER_TAG=$(jq -r .SEMVER_TAG config.master)
 VERBOSITY=0
 
 ###################################################
@@ -87,11 +87,6 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        --postgres-wait)
-        POSTGRES_INIT_WAIT="$2"
-        shift # past argument
-        shift # past value
-        ;;
         --postgres-name)
         POSTGRES_NAME="$2"
         shift # past argument
@@ -102,8 +97,13 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        --postgres-port-map)
-        POSTGRES_PORT_MAP="$2"
+        --postgres-container-port)
+        POSTGRES_CONTAINER_PORT="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --postgres-host-port)
+        POSTGRES_HOST_PORT="$2"
         shift # past argument
         shift # past value
         ;;
@@ -143,30 +143,7 @@ fi
 
 get_container_names
 
-############ DOCKER NETWORK ############
-docker_networks=$(sudo docker network ls --format "{{.Name}}")
-if ! [[ "$docker_networks" == *"$DOCKER_NETWORK"* ]]
-then
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        sudo docker network create "$DOCKER_NETWORK" --driver bridge
-    else
-        sudo docker network create "$DOCKER_NETWORK" --driver bridge >/dev/null
-    fi
-
-    printf "Waiting for Docker Network %s creation ..." "$DOCKER_NETWORK"
-    sleep 0.5
-    printf "Done.\n\n"
-
-else
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        printf "Docker network %s already exists.\n" "$DOCKER_NETWORK"
-    fi
-fi
-
 ############  POSTGRES INIT ############
-container_names=$(sudo docker ps -a --format "{{.Names}}")
 if [[ "$container_names" == *"$POSTGRES_NAME"* ]]
 then
 
@@ -183,19 +160,26 @@ fi
 
 if [[ "$VERBOSITY" == 1 ]]
 then
-    sudo docker run -p "${POSTGRES_PORT_MAP}" --name "${POSTGRES_NAME}" \
+    sudo docker run -p "${POSTGRES_HOST_PORT}":"${POSTGRES_CONTAINER_PORT}" --name "${POSTGRES_NAME}" \
     --network "${DOCKER_NETWORK}" \
     -e POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
     -e POSTGRES_USER="${POSTGRES_USER}" \
+    -e PGPORT="${POSTGRES_CONTAINER_PORT}" \
     -d m4ttl33t/postgres:"${SEMVER_TAG}"
 else
-    sudo docker run -p "${POSTGRES_PORT_MAP}" --name "${POSTGRES_NAME}" \
+    sudo docker run -p "${POSTGRES_HOST_PORT}":"${POSTGRES_CONTAINER_PORT}" --name "${POSTGRES_NAME}" \
     --network "${DOCKER_NETWORK}" \
     -e POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
     -e POSTGRES_USER="${POSTGRES_USER}" \
+    -e PGPORT="${POSTGRES_CONTAINER_PORT}" \
     -d m4ttl33t/postgres:"${SEMVER_TAG}" >/dev/null
 fi
 
 printf "Waiting for Postgres initialization ..."
-sleep "$POSTGRES_INIT_WAIT"
-printf "Done.\n\n"
+if [[ "$VERBOSITY" == 1 ]]
+then
+    timeout 90s bash -c "until sudo docker exec ${POSTGRES_NAME} pg_isready ; do sleep 0.1 ; done"
+else
+    timeout 90s bash -c "until sudo docker exec ${POSTGRES_NAME} pg_isready ; do sleep 0.1 ; done" > /dev/null
+fi
+printf "Done.\n"

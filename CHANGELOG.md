@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.2] - 2022-10-29
+
+Removed extraneous config from containers, e.g., default configs, etc.
+
+### Added
+
+- debug_containers: a script that is useful for manual container debug
+
+### Changed
+
+- Broke down master requirements.txt into per-container requirements.txt(s)
+- Added event count to HTTP Server display for GET requests
+- Kafka server now has both internal and external port mappings for inter-container functionality
+
+### Deprecated
+
+### Removed
+
+- consumer.config
+
 ## [0.0.2] - 2022-10-22
 
 Containerized the architecture for a purely local configuration.

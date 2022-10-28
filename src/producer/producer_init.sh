@@ -29,14 +29,13 @@ help() {
     printf "  -t, --tag: Semver tag name of Docker images to pull.\n"
     printf "  -n, --network: Docker network name.\n"
     printf "  --kafka-name: Kafka container name.\n"
-    printf "  --kafka-internal-port-map: Kafka port map, e.g., 29092:29092.\n"
-    printf "  --kafka-external-port-map: Kafka port map, e.g., 9092:9092.\n"
-    printf "  --kafka-wait: The delay to wait after Kafka is started in seconds.\n"
+    printf "  --kafka-port: Kafka port, e.g., 9092.\n"
+    printf "  --producer-client-id: KafkaProducer client ID.\n"
     printf "  --producer-name: The name of the KafkaProducer container.\n"
     printf "  --producer-http-rule: The http endpoint (URL suffix) for KafkaProducer (HTTP server).\n"
     printf "  --producer-ingress: The ingress listener of HTTP server, e.g., 0.0.0.0\n"
-    printf "  --producer-port-map: The KafkaProducer port map, e.g., 5000:5000.\n"
-    printf "  --producer-wait: The delay to wait for KafkaProducer after container is started in seconds.\n"
+    printf "  --producer-container-port: The KafkaProducer container port, e.g., 5000.\n"
+    printf "  --producer-host-port: The KafkaProducer host port, e.g., 5000.\n"
 }
 
 ###################################################
@@ -48,15 +47,14 @@ dump_config() {
     printf "\nSourced configuration (master):\n\n"
     printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
     printf "KAFKA_NAME: %s\n" "$KAFKA_NAME"
-    printf "KAFKA_EXTERNAL_PORT_MAP: %s\n" "$KAFKA_EXTERNAL_PORT_MAP"
-    printf "KAFKA_INTERNAL_PORT_MAP: %s\n" "$KAFKA_INTERNAL_PORT_MAP"
-    printf "KAFKA_INIT_WAIT: %s\n" "$KAFKA_INIT_WAIT"
+    printf "KAFKA_PORT: %s\n" "$KAFKA_PORT"
     printf "KAFKA_TOPIC: %s\n" "$KAFKA_TOPIC"
+    printf "PRODUCER_CLIENT_ID: %s\n" "$PRODUCER_CLIENT_ID"
     printf "PRODUCER_NAME: %s\n" "$PRODUCER_NAME"
     printf "PRODUCER_HTTP_RULE: %s\n" "$PRODUCER_HTTP_RULE"
     printf "PRODUCER_INGRESS_HTTP_LISTENER: %s\n" "$PRODUCER_INGRESS_HTTP_LISTENER"
-    printf "PRODUCER_INIT_WAIT: %s\n" "$PRODUCER_INIT_WAIT"
-    printf "PRODUCER_PORT_MAP: %s\n" "$PRODUCER_PORT_MAP"
+    printf "PRODUCER_CONTAINER_PORT: %s\n" "$PRODUCER_CONTAINER_PORT"
+    printf "PRODUCER_HOST_PORT: %s\n" "$PRODUCER_HOST_PORT"
     printf "SEMVER_TAG: %s\n" "$SEMVER_TAG"
     printf "VERBOSITY: %s\n" "$VERBOSITY"
 
@@ -76,18 +74,18 @@ get_container_names() {
 # CONFIG SOURCING FROM FILE                       #
 ###################################################
 
-DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.producer)
-KAFKA_NAME=$(jq -r .KAFKA_NAME config.producer)
-KAFKA_EXTERNAL_PORT_MAP=$(jq -r .KAFKA_EXTERNAL_PORT_MAP config.producer)
-KAFKA_INTERNAL_PORT_MAP=$(jq -r .KAFKA_INTERNAL_PORT_MAP config.producer)
-KAFKA_INIT_WAIT=$(jq -r .KAFKA_INIT_WAIT config.producer)
-KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC config.producer)
-PRODUCER_NAME=$(jq -r .PRODUCER_NAME config.producer)
-PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE config.producer)
-PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER config.producer)
-PRODUCER_INIT_WAIT=$(jq -r .PRODUCER_INIT_WAIT config.producer)
-PRODUCER_PORT_MAP=$(jq -r .PRODUCER_PORT_MAP config.producer)
-SEMVER_TAG=$(jq -r .SEMVER_TAG config.producer)
+pwd
+DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
+KAFKA_NAME=$(jq -r .KAFKA_NAME config.master)
+KAFKA_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT config.master)
+KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC config.master)
+PRODUCER_CLIENT_ID=$(jq -r .PRODUCER_CLIENT_ID config.master)
+PRODUCER_NAME=$(jq -r .PRODUCER_NAME config.master)
+PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE config.master)
+PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER config.master)
+PRODUCER_CONTAINER_PORT=$(jq -r .PRODUCER_CONTAINER_PORT config.master)
+PRODUCER_HOST_PORT=$(jq -r .PRODUCER_HOST_PORT config.master)
+SEMVER_TAG=$(jq -r .SEMVER_TAG config.master)
 VERBOSITY=0
 
 ###################################################
@@ -105,13 +103,8 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        --kafka-internal-port-map)
-        KAFKA_INTERNAL_PORT_MAP="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --kafka-external-port-map)
-        KAFKA_EXTERNAL_PORT_MAP="$2"
+        --kafka-port)
+        KAFKA_PORT="$2"
         shift # past argument
         shift # past value
         ;;
@@ -120,13 +113,13 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        --kafka-wait)
-        KAFKA_INIT_WAIT="$2"
+        -n|--network)
+        DOCKER_NETWORK="$2"
         shift # past argument
         shift # past value
         ;;
-        -n|--network)
-        DOCKER_NETWORK="$2"
+        --producer-client-id)
+        PRODUCER_CLIENT_ID="$2"
         shift # past argument
         shift # past value
         ;;
@@ -145,13 +138,13 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        --producer-port-map)
-        PRODUCER_PORT_MAP="$2"
+        --producer-container-port)
+        PRODUCER_CONTAINER_PORT="$2"
         shift # past argument
         shift # past value
         ;;
-        --producer-wait)
-        PRODUCER_INIT_WAIT="$2"
+        --producer-host-port)
+        PRODUCER_HOST_PORT="$2"
         shift # past argument
         shift # past value
         ;;
@@ -186,28 +179,6 @@ then
     dump_config
 fi
 
-############ DOCKER NETWORK ############
-docker_networks=$(sudo docker network ls --format "{{.Name}}")
-if ! [[ "$docker_networks" == *"$DOCKER_NETWORK"* ]]
-then
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        sudo docker network create "$DOCKER_NETWORK" --driver bridge
-    else
-        sudo docker network create "$DOCKER_NETWORK" --driver bridge >/dev/null
-    fi
-
-    printf "Waiting for Docker Network %s creation ..." "$DOCKER_NETWORK"
-    sleep 0.5
-    printf "Done.\n\n"
-
-else
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        printf "Docker network %s already exists.\n" "$DOCKER_NETWORK"
-    fi
-fi
-
 ############  PRODUCER INIT ############
 if [[ "$container_names" == *"$PRODUCER_NAME"* ]]
 then
@@ -225,33 +196,41 @@ fi
 
 if [[ "$VERBOSITY" == 1 ]]
 then
-    http_port=$(echo "$PRODUCER_PORT_MAP" | cut -d":" -f2)
-    sudo docker run -p "${PRODUCER_PORT_MAP}" --name "${PRODUCER_NAME}" \
+    sudo docker run -p "$PRODUCER_HOST_PORT":"$PRODUCER_CONTAINER_PORT" --name "${PRODUCER_NAME}" \
     --network "${DOCKER_NETWORK}" \
     -e PYTHONUNBUFFERED=1 \
-    -e HTTP_RULE="$PRODUCER_HTTP_RULE" \
+    -e PRODUCER_CLIENT_ID="$PRODUCER_CLIENT_ID" \
+    -e PRODUCER_HTTP_RULE="$PRODUCER_HTTP_RULE" \
+    -e PRODUCER_INGRESS_HTTP_LISTENER="$PRODUCER_INGRESS_HTTP_LISTENER" \
+    -e PRODUCER_HTTP_PORT="$PRODUCER_CONTAINER_PORT" \
     -e KAFKA_NAME="$KAFKA_NAME" \
-    -e KAFKA_EXTERNAL_PORT_MAP="$KAFKA_EXTERNAL_PORT_MAP" \
+    -e KAFKA_PORT="$KAFKA_PORT" \
     -e KAFKA_TOPIC="$KAFKA_TOPIC" \
-    -e INGRESS_HTTP_LISTENER="$PRODUCER_INGRESS_HTTP_LISTENER" \
-    -e INGRESS_HTTP_PORT="$http_port" \
     -d m4ttl33t/producer:"${SEMVER_TAG}"
 else
-    http_port=$(echo "$PRODUCER_PORT_MAP" | cut -d":" -f2)
-    sudo docker run -p "${PRODUCER_PORT_MAP}" --name "${PRODUCER_NAME}" \
+    sudo docker run -p "$PRODUCER_HOST_PORT":"$PRODUCER_CONTAINER_PORT" --name "${PRODUCER_NAME}" \
     --network "${DOCKER_NETWORK}" \
     -e PYTHONUNBUFFERED=1 \
-    -e HTTP_RULE="$PRODUCER_HTTP_RULE" \
+    -e PRODUCER_CLIENT_ID="$PRODUCER_CLIENT_ID" \
+    -e PRODUCER_HTTP_RULE="$PRODUCER_HTTP_RULE" \
+    -e PRODUCER_INGRESS_HTTP_LISTENER="$PRODUCER_INGRESS_HTTP_LISTENER" \
+    -e PRODUCER_HTTP_PORT="$PRODUCER_CONTAINER_PORT" \
     -e KAFKA_NAME="$KAFKA_NAME" \
-    -e KAFKA_EXTERNAL_PORT_MAP="$KAFKA_EXTERNAL_PORT_MAP" \
+    -e KAFKA_PORT="$KAFKA_PORT" \
     -e KAFKA_TOPIC="$KAFKA_TOPIC" \
-    -e INGRESS_HTTP_LISTENER="$PRODUCER_INGRESS_HTTP_LISTENER" \
-    -e INGRESS_HTTP_PORT="$http_port" \
     -d m4ttl33t/producer:"${SEMVER_TAG}" > /dev/null
 fi
 
 printf "Waiting for KafkaProducer initialization ..."
-sleep "$PRODUCER_INIT_WAIT"
-printf "Done.\n\n"
+for ((i=0;i<100;i++))
+do
+    if [ "$( sudo docker container inspect -f '{{.State.Status}}' "${PRODUCER_NAME}" )" == "running" ]
+    then
+        break
+    else
+        sleep 0.1
+    fi
+done
+printf "Done.\n"
 producer_ip=$(sudo docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$PRODUCER_NAME")
 printf "%s\n" "$producer_ip"

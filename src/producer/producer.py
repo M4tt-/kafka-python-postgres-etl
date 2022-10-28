@@ -18,7 +18,7 @@ from kafka import KafkaProducer
 
 # %% CONSTANTS
 
-CONFIG_FILE = "config.producer"
+BAD_CLIENT_IDS = ['null', "none", "default"]
 DEFAULT_PRODUCER_ENCODING = "utf-8"
 
 # %% CLASSES
@@ -31,7 +31,8 @@ class Producer(KafkaProducer):
         """Constructor."""
 
         self.get_config()
-        super().__init__(bootstrap_servers=self.kafka_server)
+        super().__init__(**self.producer_kwargs)
+        assert self.bootstrap_connected()
         print(f"bootstrap_connected: {self.bootstrap_connected()}")
 
         self.__app = Flask(__name__)
@@ -41,42 +42,31 @@ class Producer(KafkaProducer):
         self.post_count = 0
 
     def get_config(self):
-        """Try to get configuration details through various, prioritized means.
-
-        Priority 1: Check for environment variables.
-        Priority 2: Check default config file.
+        """Pull configuration details from environment.
 
         Returns:
             None.
         """
 
-        def get_env_var(key):
-            try:
-                var = os.environ[key]
-            except KeyError:
-                print(os.getcwd())
-                try:
-                    with open(CONFIG_FILE, 'r') as config:
-                        try:
-                            var = json.load(config)[key]
-                        except KeyError:
-                            return None
-                except FileNotFoundError:
-                    with open(f"./src/producer/{CONFIG_FILE}", 'r') as config:
-                        var = json.load(config)[key]
-            return var
-
-        http_port_map = get_env_var("PRODUCER_PORT_MAP")
-        http_ingress_port = http_port_map.split(':')[1]
-        kafka_name = get_env_var('KAFKA_NAME')
-        kafka_port_map = get_env_var('KAFKA_EXTERNAL_PORT_MAP')
-        kafka_port = kafka_port_map.split(':')[1]
+        kafka_name = os.environ.get('KAFKA_NAME')
+        kafka_port = os.environ.get('KAFKA_PORT')
         kafka_server = f"{kafka_name}:{kafka_port}"
-        self.kafka_server = kafka_server
-        self.kafka_topic = get_env_var('KAFKA_TOPIC')
-        self.ingress_listener = get_env_var("PRODUCER_INGRESS_HTTP_LISTENER")
-        self.ingress_port = http_ingress_port
-        self.http_rule = get_env_var("PRODUCER_HTTP_RULE")
+        self.producer_kwargs = {}
+        self.producer_kwargs['bootstrap_servers'] = kafka_server
+
+        # The default client_id is already chosen intelligently -- don't change
+        try:
+            self.producer_kwargs['client_id'] = os.environ.get('PRODUCER_CLIENT_ID')
+        except KeyError:
+            pass
+
+        if self.producer_kwargs['client_id'].lower().strip() in BAD_CLIENT_IDS:
+            del self.producer_kwargs['client_id']
+
+        self.kafka_topic = os.environ.get('KAFKA_TOPIC')
+        self.ingress_listener = os.environ.get("PRODUCER_INGRESS_HTTP_LISTENER")
+        self.ingress_port = os.environ.get("PRODUCER_HTTP_PORT")
+        self.http_rule = os.environ.get("PRODUCER_HTTP_RULE")
 
     def process_event(self):   # pylint: disable=R0201
         """Process a request.

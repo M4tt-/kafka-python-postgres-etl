@@ -11,7 +11,6 @@ This module contains a class that produces simulated data from a vehicle.
 
 # %% IMPORTS
 
-import json
 import os
 import random
 import string
@@ -22,7 +21,6 @@ from location import Location
 
 # %% CONSTANTS
 
-CONFIG_FILE = "config.vehicle"
 DEFAULT_HTTP_PORT = 5000
 DEFAULT_MAKE = 'Ford'
 DEFAULT_VEHICLE_REPORT_DELAY = 3     # seconds
@@ -65,8 +63,6 @@ class Vehicle:
 
         self.vin = generate_vin()
         self.get_config()
-        if self.make is None:
-            self.make = DEFAULT_MAKE
         if self.model is None:
             self.model = random.choice(MODEL_CHOICES)
         self.driving = False
@@ -90,26 +86,28 @@ class Vehicle:
             None.
         """
 
-        def get_env_var(key):
-            try:
-                var = os.environ[key]
-            except KeyError:
-                with open(CONFIG_FILE, 'r') as config:
-                    try:
-                        var = json.load(config)[key]
-                    except KeyError:
-                        return None
-            return var
-
-        self.http_server = get_env_var('PRODUCER_HTTP_SERVER')
-        self.http_port = get_env_var('PRODUCER_PORT_MAP').split(':')[1]
-        self.http_rule = get_env_var('PRODUCER_HTTP_RULE')
-        self.make = get_env_var('VEHICLE_MAKE')
-        self.model = get_env_var('VEHICLE_MODEL')
-        self.auto_start = get_env_var('AUTO_START')
-        self.velocity_x = get_env_var('VEHICLE_VELOCITY_X')
-        self.velocity_y = get_env_var('VEHICLE_VELOCITY_Y')
-        self.velocity_z = get_env_var('VEHICLE_VELOCITY_Z')
+        self.http_server = os.environ.get('PRODUCER_HTTP_SERVER')
+        self.http_port = int(os.environ.get('PRODUCER_HTTP_PORT'))
+        self.http_rule = os.environ.get('PRODUCER_HTTP_RULE')
+        self.make = os.environ.get('VEHICLE_MAKE', DEFAULT_MAKE)
+        self.model = os.environ.get('VEHICLE_MODEL')
+        self.auto_start = os.environ.get('AUTO_START')
+        self.report_delay = float(os.environ.get('VEHICLE_REPORT_DELAY',
+                                                 DEFAULT_VEHICLE_REPORT_DELAY))
+        self.velocity_x = float(os.environ.get('VEHICLE_VELOCITY_X'))
+        self.velocity_y = float(os.environ.get('VEHICLE_VELOCITY_Y'))
+        self.velocity_z = float(os.environ.get('VEHICLE_VELOCITY_Z'))
+        print("Dumping Vehicle config data:\n")
+        print(f"http_server: {self.http_server}")
+        print(f"http_port: {self.http_port}")
+        print(f"http_rule: {self.http_rule}")
+        print(f"make: {self.make}")
+        print(f"model: {self.model}")
+        print(f"auto_start: {self.auto_start}")
+        print(f"report_delay: {self.report_delay}")
+        print(f"velocity_x: {self.velocity_x}")
+        print(f"velocity_y: {self.velocity_y}")
+        print(f"velocity_z: {self.velocity_z}")
 
     # -------------------------------------------------------------------------
     def get_position(self):
@@ -185,6 +183,6 @@ class Vehicle:
         while True:
             if self.driving:
                 self.report()
-                time.sleep(DEFAULT_VEHICLE_REPORT_DELAY)
+                time.sleep(self.report_delay)
             else:
                 break

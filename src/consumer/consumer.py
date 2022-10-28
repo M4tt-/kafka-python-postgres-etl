@@ -9,7 +9,6 @@ This module contains example usage of KafkaConsumer from kafka-python.
 
 # %% IMPORTS
 
-import json
 import os
 import psycopg
 
@@ -19,7 +18,7 @@ from utils.data_utils import (Formatter, SqlQueryBuilder)
 
 # %% CONSTANTS
 
-CONFIG_FILE = "config.consumer"
+BAD_CLIENT_IDS = ['null', "none", "default"]
 DEFAULT_PRODUCER_ENCODING = "utf-8"
 
 # %% CLASSES
@@ -33,7 +32,8 @@ class Consumer(KafkaConsumer):
 
         self.count = 0
         self.get_config()
-        super().__init__(self.kafka_topic, bootstrap_servers=self.kafka_server)
+        super().__init__(self.kafka_topic, **self.consumer_kwargs)
+        assert self.bootstrap_connected()
         print(f"bootstrap_connected: {self.bootstrap_connected()}")
         print(f"subscriptions: {self.subscription()}")
 
@@ -47,28 +47,28 @@ class Consumer(KafkaConsumer):
             None.
         """
 
-        def get_env_var(key):
-            try:
-                var = os.environ[key]
-            except KeyError:
-                with open(CONFIG_FILE, 'r') as config:
-                    try:
-                        var = json.load(config)[key]
-                    except KeyError:
-                        return None
-            return var
+        kafka_name = os.environ.get('KAFKA_NAME')
+        kafka_port = os.environ.get('KAFKA_PORT')
+        kafka_server = f"{kafka_name}:{kafka_port}"
+        self.consumer_kwargs = {}
+        self.consumer_kwargs['bootstrap_servers'] = kafka_server
 
-        kafka_name = get_env_var('KAFKA_NAME')
-        kafka_port_map = get_env_var('KAFKA_EXTERNAL_PORT_MAP')
-        kafka_server = f"{kafka_name}:{kafka_port_map.split(':')[1]}"
-        self.kafka_server = kafka_server
-        self.kafka_topic = get_env_var('KAFKA_TOPIC')
-        self.pg_server = get_env_var('POSTGRES_NAME')
-        self.pg_port = get_env_var('POSTGRES_PORT_MAP').split(':')[1]
-        self.pg_db = get_env_var('POSTGRES_DB')
-        self.pg_user = get_env_var('POSTGRES_USER')
-        self.pg_password = get_env_var('POSTGRES_PASSWORD')
-        self.pg_table = get_env_var('POSTGRES_TABLE')
+        # The default client_id is already chosen intelligently -- don't change
+        try:
+            self.consumer_kwargs['client_id'] = os.environ['CONSUMER_CLIENT_ID']
+        except KeyError:
+            pass
+
+        if self.consumer_kwargs['client_id'].lower().strip() in BAD_CLIENT_IDS:
+            del self.consumer_kwargs['client_id']
+
+        self.kafka_topic = os.environ.get('KAFKA_TOPIC')
+        self.pg_server = os.environ.get('POSTGRES_NAME')
+        self.pg_port = os.environ.get('POSTGRES_PORT')
+        self.pg_db = os.environ.get('POSTGRES_DB', 'av_telemetry')
+        self.pg_user = os.environ.get('POSTGRES_USER')
+        self.pg_password = os.environ.get('POSTGRES_PASSWORD')
+        self.pg_table = os.environ.get('POSTGRES_TABLE', 'diag')
 
     def start(self):
         """Start consuming messages from the topic.

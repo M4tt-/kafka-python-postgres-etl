@@ -33,26 +33,31 @@ help() {
     printf "Options:\n"
     printf "  -t, --tag: Semver tag name of Docker images to pull.\n"
     printf "  -n, --network: Docker network name.\n"
+    printf "  --consumer-client-id: KafkaConsumer client ID.\n"
     printf "  --consumer-name: KafkaConsumer container name.\n"
-    printf "  --consumer-wait: The delay to wait for KafkaConsumer after container is started in seconds.\n"
     printf "  --http-log-file: The full path to store the log of HTTP server host name.\n"
     printf "  --kafka-name: Kafka container name.\n"
-    printf "  --kafka-internal-port-map: Kafka port map, e.g., 29092:29092.\n"
-    printf "  --kafka-external-port-map: Kafka port map, e.g., 9092:9092.\n"
-    printf "  --kafka-wait: The delay to wait after Kafka is started in seconds.\n"
+    printf "  --kafka-internal-container-port: Kafka internal container port, e.g., 29092.\n"
+    printf "  --kafka-internal-host-port: Kafka internal host port, e.g., 29092.\n"
+    printf "  --kafka-external-container-port: Kafka external container port, e.g., 9092.\n"
+    printf "  --kafka-external-host-port: Kafka external host port, e.g., 9092.\n"
     printf "  --postgres-name: The name of the Postgres container.\n"
     printf "  --postgres-wait: The delay to wait after Postgres is started in seconds.\n"
     printf "  --postgres-user: The name of the Postgres user.\n"
     printf "  --postgres-password: The name of the Postgres password.\n"
-    printf "  --postgres-port-map: The Postgres port map, e.g., 5432:5432.\n"
+    printf "  --postgres-container-port: The Postgres container port, e.g., 5432.\n"
+    printf "  --postgres-host-port: The Postgres host port, e.g., 5432.\n"
+    printf "  --producer-client-id: KafkaProducer client ID.\n"
     printf "  --producer-name: The name of the KafkaProducer container.\n"
     printf "  --producer-http-rule: The http endpoint (URL suffix) for KafkaProducer (HTTP server).\n"
     printf "  --producer-ingress: The ingress listener of HTTP server, e.g., 0.0.0.0\n"
-    printf "  --producer-port-map: The KafkaProducer port map, e.g., 5000:5000.\n"
-    printf "  --producer-wait: The delay to wait for KafkaProducer after container is started in seconds.\n"
+    printf "  --producer-container-port: The KafkaProducer container port, e.g., 5000.\n"
+    printf "  --producer-host-port: The KafkaProducer host port, e.g., 5000.\n"
+    printf "  --postgres-container-port: The Postgres container port, e.g., 5432.\n"
+    printf "  --postgres-host-port: The Postgres host port, e.g., 5432.\n"
     printf "  --zookeeper-name: Zookeeper container name.\n"
-    printf "  --zookeeper-port-map: Zookeeper port map, e.g, 2181:2181.\n"
-    printf "  --zookeeper-wait: The delay to wait after Zookeeper is started in seconds.\n"
+    printf "  --zookeeper-container-port: Zookeeper container port, e.g, 2181.\n"
+    printf "  --zookeeper-host-port: Zookeeper host port, e.g, 2181.\n"
 }
 
 ###################################################
@@ -62,30 +67,32 @@ help() {
 dump_config() {
 
     printf "\nSourced configuration (master):\n\n"
+    printf "CONSUMER_CLIENT_ID: %s\n" "$CONSUMER_CLIENT_ID"
     printf "CONSUMER_NAME: %s\n" "$CONSUMER_NAME"
-    printf "CONSUMER_INIT_WAIT: %s\n" "$CONSUMER_INIT_WAIT"
     printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
     printf "HTTP_LOG_FILE: %s\n" "$HTTP_LOG_FILE"
     printf "KAFKA_NAME: %s\n" "$KAFKA_NAME"
-    printf "KAFKA_EXTERNAL_PORT_MAP: %s\n" "$KAFKA_EXTERNAL_PORT_MAP"
-    printf "KAFKA_INTERNAL_PORT_MAP: %s\n" "$KAFKA_INTERNAL_PORT_MAP"
-    printf "KAFKA_INIT_WAIT: %s\n" "$KAFKA_INIT_WAIT"
+    printf "KAFKA_EXTERNAL_CONTAINER_PORT: %s\n" "$KAFKA_EXTERNAL_CONTAINER_PORT"
+    printf "KAFKA_EXTERNAL_HOST_PORT: %s\n" "$KAFKA_EXTERNAL_HOST_PORT"
+    printf "KAFKA_INTERNAL_CONTAINER_PORT: %s\n" "$KAFKA_INTERNAL_CONTAINER_PORT"
+    printf "KAFKA_INTERNAL_HOST_PORT: %s\n" "$KAFKA_INTERNAL_HOST_PORT"
     printf "KAFKA_TOPIC: %s\n" "$KAFKA_TOPIC"
     printf "POSTGRES_NAME: %s\n" "$POSTGRES_NAME"
-    printf "POSTGRES_INIT_WAIT: %s\n" "$POSTGRES_INIT_WAIT"
     printf "POSTGRES_PASSWORD: %s\n" "$POSTGRES_PASSWORD"
-    printf "POSTGRES_PORT_MAP: %s\n" "$POSTGRES_PORT_MAP"
+    printf "POSTGRES_CONTAINER_PORT: %s\n" "$POSTGRES_CONTAINER_PORT"
+    printf "POSTGRES_HOST_PORT: %s\n" "$POSTGRES_HOST_PORT"
     printf "POSTGRES_USER: %s\n" "$POSTGRES_USER"
+    printf "PRODUCER_CLIENT_ID: %s\n" "$PRODUCER_CLIENT_ID"
     printf "PRODUCER_NAME: %s\n" "$PRODUCER_NAME"
     printf "PRODUCER_HTTP_RULE: %s\n" "$PRODUCER_HTTP_RULE"
     printf "PRODUCER_INGRESS_HTTP_LISTENER: %s\n" "$PRODUCER_INGRESS_HTTP_LISTENER"
-    printf "PRODUCER_INIT_WAIT: %s\n" "$PRODUCER_INIT_WAIT"
-    printf "PRODUCER_PORT_MAP: %s\n" "$PRODUCER_PORT_MAP"
+    printf "PRODUCER_CONTAINER_PORT: %s\n" "$PRODUCER_CONTAINER_PORT"
+    printf "PRODUCER_HOST_PORT: %s\n" "$PRODUCER_HOST_PORT"
     printf "SEMVER_TAG: %s\n" "$SEMVER_TAG"
     printf "VERBOSITY: %s\n" "$VERBOSITY"
     printf "ZOOKEEPER_NAME: %s\n" "$ZOOKEEPER_NAME"
-    printf "ZOOKEEPER_PORT_MAP: %s\n" "$ZOOKEEPER_PORT_MAP"
-    printf "ZOOKEEPER_INIT_WAIT: %s\n\n" "$ZOOKEEPER_INIT_WAIT"
+    printf "ZOOKEEPER_CONTAINER_PORT: %s\n" "$ZOOKEEPER_CONTAINER_PORT"
+    printf "ZOOKEEPER_HOST_PORT: %s\n" "$ZOOKEEPER_HOST_PORT"
 
 }
 
@@ -95,6 +102,7 @@ dump_config() {
 
 bridge_init() {
 
+    network_up=0
     docker_networks=$(sudo docker network ls --format "{{.Name}}")
     if ! [[ "$docker_networks" == *"$DOCKER_NETWORK"* ]]
     then
@@ -106,8 +114,23 @@ bridge_init() {
         fi
 
         printf "Waiting for Docker Network %s creation ..." "$DOCKER_NETWORK"
-        sleep 0.5
-        printf "Done.\n\n"
+        for ((i=0; i<100; i++))
+        do
+            docker_networks=$(sudo docker network ls --format "{{.Name}}")
+            if ! [[ "$docker_networks" == *"$DOCKER_NETWORK"* ]]
+            then
+                sleep 0.1
+            else
+                network_up=1
+                printf "Done.\n"
+                break
+            fi
+        done
+        if [[ $network_up == 0 ]]
+        then
+            printf "Unable to create Docker network %s. Exiting ..." "$DOCKER_NETWORK"
+            exit 1
+        fi
 
     else
         if [[ "$VERBOSITY" == 1 ]]
@@ -153,51 +176,71 @@ kafka_init() {
         fi
     fi
 
-    # Parse the port map for container and host ports
-    kafka_int_cont_port=$(printf "%s" "${KAFKA_INTERNAL_PORT_MAP}" | cut -d":" -f1)
-    kafka_ext_cont_port=$(printf "%s" "${KAFKA_EXTERNAL_PORT_MAP}" | cut -d":" -f1)
-    zookeeper_cont_port=$(printf "%s" "${ZOOKEEPER_PORT_MAP}" | cut -d":" -f1)
-
     # Start the Kafka container
     if [[ "$VERBOSITY" == 1 ]]
     then
-        sudo docker run -p "${KAFKA_INTERNAL_PORT_MAP}" \
-        -p "${KAFKA_EXTERNAL_PORT_MAP}" --name "$KAFKA_NAME" \
+        sudo docker run -p "${KAFKA_INTERNAL_HOST_PORT}":"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+        -p "${KAFKA_EXTERNAL_HOST_PORT}":"${KAFKA_EXTERNAL_CONTAINER_PORT}" --name "$KAFKA_NAME" \
         --network "$DOCKER_NETWORK" \
         --restart unless-stopped \
         -e ALLOW_PLAINTEXT_LISTENER=yes \
         -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
-        -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${kafka_ext_cont_port}",PLAINTEXT_HOST://localhost:"${kafka_int_cont_port}" \
-        -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${kafka_ext_cont_port}",PLAINTEXT_HOST://localhost:"${kafka_int_cont_port}" \
-        -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${zookeeper_cont_port}" \
-        -d bitnami/kafka:latest
+        -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+        -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+        -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${ZOOKEEPER_CONTAINER_PORT}" \
+        -d bitnami/kafka:3.3.1
     else
-        sudo docker run -p "${KAFKA_INTERNAL_PORT_MAP}" \
-        -p "${KAFKA_EXTERNAL_PORT_MAP}" --name "$KAFKA_NAME" \
+        sudo docker run -p "${KAFKA_INTERNAL_HOST_PORT}":"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+        -p "${KAFKA_EXTERNAL_HOST_PORT}":"${KAFKA_EXTERNAL_CONTAINER_PORT}" --name "$KAFKA_NAME" \
         --network "$DOCKER_NETWORK" \
         --restart unless-stopped \
         -e ALLOW_PLAINTEXT_LISTENER=yes \
         -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
-        -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${kafka_ext_cont_port}",PLAINTEXT_HOST://localhost:"${kafka_int_cont_port}" \
-        -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${kafka_ext_cont_port}",PLAINTEXT_HOST://localhost:"${kafka_int_cont_port}" \
-        -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${zookeeper_cont_port}" \
-        -d bitnami/kafka:latest >/dev/null
+        -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+        -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+        -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${ZOOKEEPER_CONTAINER_PORT}" \
+        -d bitnami/kafka:3.3.1 >/dev/null
     fi
 
     printf "Waiting for Kafka initialization ..."
-    sleep "$KAFKA_INIT_WAIT"
-    printf "Done.\n\n"
+    kafka_up=0
+    for ((i=0; i<100; i++))
+    do
+        srvr_response=$(echo "dump" | nc 127.0.0.1 "$ZOOKEEPER_HOST_PORT" | grep brokers)
+        if [[ "$srvr_response" == *"brokers/ids/"* ]]
+        then
+            kafka_up=1
+            break
+        else
+            sleep 0.1
+        fi
+    done
+    if [[ "$kafka_up" == 0 ]]
+    then
+        printf "Zookeeper container %s took too long to gain a Kafka broker. Exiting ..." "$ZOOKEEPER_NAME"
+        exit 1
+    fi
 
     # Create the Kafka topic if it doesn't exist
-    kafka_topics=$(sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_int_cont_port --list && exit")
+    if [[ "$VERBOSITY" == 1 ]]
+    then
+        printf "Getting existing Kafka topics ..."
+    fi
+    kafka_topics=$(sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$KAFKA_INTERNAL_CONTAINER_PORT --list && exit")
+    if [[ "$VERBOSITY" == 1 ]]
+    then
+        printf "Done.\n"
+    fi
     if ! [[ "$kafka_topics" == *"$KAFKA_TOPIC"* ]]
     then
         # Create the Kafka topic
         if [[ "$VERBOSITY" == 1 ]]
         then
-            sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_int_cont_port --create --topic $KAFKA_TOPIC && exit"
+            printf "Creating the Kafka topic %s ..." "$KAFKA_TOPIC"
+            sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$KAFKA_INTERNAL_CONTAINER_PORT --create --topic $KAFKA_TOPIC && exit"
+            printf "Done.\n"
         else
-            sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_int_cont_port --create --topic $KAFKA_TOPIC && exit" >/dev/null
+            sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$KAFKA_INTERNAL_CONTAINER_PORT --create --topic $KAFKA_TOPIC && exit" >/dev/null
         fi
 
     else
@@ -207,7 +250,6 @@ kafka_init() {
             printf "Kafka topic %s already exists -- skipping topic creation.\n" "$KAFKA_TOPIC"
         fi
     fi
-
 }
 
 ###################################################
@@ -230,54 +272,75 @@ zookeeper_init() {
     fi
 
     # Start the zookeeper container
+    printf "Waiting for Zookeeper initialization ..."
     if [[ "$VERBOSITY" == 1 ]]
     then
-        sudo docker run -p "$ZOOKEEPER_PORT_MAP" --name "$ZOOKEEPER_NAME" \
+        sudo docker run -p "$ZOOKEEPER_HOST_PORT":"$ZOOKEEPER_CONTAINER_PORT" --name "$ZOOKEEPER_NAME" \
         --network "$DOCKER_NETWORK" \
         -e ALLOW_ANONYMOUS_LOGIN=yes \
-        -d bitnami/zookeeper:latest
+        -e ZOO_4LW_COMMANDS_WHITELIST="dump" \
+        -e ZOO_PORT_NUMBER="$ZOOKEEPER_CONTAINER_PORT" \
+        -d bitnami/zookeeper:3.7.1
     else
-        sudo docker run -p "$ZOOKEEPER_PORT_MAP" --name "$ZOOKEEPER_NAME" \
+        sudo docker run -p "$ZOOKEEPER_HOST_PORT":"$ZOOKEEPER_CONTAINER_PORT" --name "$ZOOKEEPER_NAME" \
         --network "$DOCKER_NETWORK" \
         -e ALLOW_ANONYMOUS_LOGIN=yes \
-        -d bitnami/zookeeper:latest >/dev/null
+        -e ZOO_4LW_COMMANDS_WHITELIST="dump" \
+        -e ZOO_PORT_NUMBER="$ZOOKEEPER_CONTAINER_PORT" \
+        -d bitnami/zookeeper:3.7.1 >/dev/null
     fi
 
     # Wait for zookeeper to init
-    printf "Waiting for Zookeeper initialization ..."
-    sleep "$ZOOKEEPER_INIT_WAIT"
-    printf "Done.\n\n"
-
+    zookeeper_up=0
+    for ((i=0; i<100; i++))
+    do
+        srvr_response=$(echo "dump" | nc 127.0.0.1 "$ZOOKEEPER_HOST_PORT")
+        if [[ "$srvr_response" == *"Session"* ]]
+        then
+            zookeeper_up=1
+            break
+        else
+            sleep 0.1
+        fi
+    done
+    if [[ $zookeeper_up == 0 ]]
+    then
+        printf "Zookeeper container %s took too long to initialize. Exiting ..." "$ZOOKEEPER_NAME"
+        exit 1
+    fi
+    printf "Done.\n"
 }
 
 ####################################################
 # CONFIG SOURCING FROM FILE                       #
 ###################################################
 
+CONSUMER_CLIENT_ID=$(jq -r .CONSUMER_CLIENT_ID config.master)
 CONSUMER_NAME=$(jq -r .CONSUMER_NAME config.master)
-CONSUMER_INIT_WAIT=$(jq -r .CONSUMER_INIT_WAIT config.master)
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
 HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE config.master)
 KAFKA_NAME=$(jq -r .KAFKA_NAME config.master)
-KAFKA_EXTERNAL_PORT_MAP=$(jq -r .KAFKA_EXTERNAL_PORT_MAP config.master)
-KAFKA_INTERNAL_PORT_MAP=$(jq -r .KAFKA_INTERNAL_PORT_MAP config.master)
-KAFKA_INIT_WAIT=$(jq -r .KAFKA_INIT_WAIT config.master)
+KAFKA_EXTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT config.master)
+KAFKA_EXTERNAL_HOST_PORT=$(jq -r .KAFKA_EXTERNAL_HOST_PORT config.master)
+KAFKA_INTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_INTERNAL_CONTAINER_PORT config.master)
+KAFKA_INTERNAL_HOST_PORT=$(jq -r .KAFKA_INTERNAL_HOST_PORT config.master)
 KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC config.master)
 POSTGRES_NAME=$(jq -r .POSTGRES_NAME config.master)
-POSTGRES_INIT_WAIT=$(jq -r .POSTGRES_INIT_WAIT config.master)
 POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD config.master)
-POSTGRES_PORT_MAP=$(jq -r .POSTGRES_PORT_MAP config.master)
+POSTGRES_CONTAINER_PORT=$(jq -r .POSTGRES_CONTAINER_PORT config.master)
+POSTGRES_HOST_PORT=$(jq -r .POSTGRES_HOST_PORT config.master)
 POSTGRES_USER=$(jq -r .POSTGRES_USER config.master)
+PRODUCER_CLIENT_ID=$(jq -r .PRODUCER_CLIENT_ID config.master)
 PRODUCER_NAME=$(jq -r .PRODUCER_NAME config.master)
 PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE config.master)
 PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER config.master)
-PRODUCER_INIT_WAIT=$(jq -r .PRODUCER_INIT_WAIT config.master)
-PRODUCER_PORT_MAP=$(jq -r .PRODUCER_PORT_MAP config.master)
+PRODUCER_CONTAINER_PORT=$(jq -r .PRODUCER_CONTAINER_PORT config.master)
+PRODUCER_HOST_PORT=$(jq -r .PRODUCER_HOST_PORT config.master)
 SEMVER_TAG=$(jq -r .SEMVER_TAG config.master)
 VERBOSITY=0
 ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME config.master)
-ZOOKEEPER_PORT_MAP=$(jq -r .ZOOKEEPER_PORT_MAP config.master)
-ZOOKEEPER_INIT_WAIT=$(jq -r .ZOOKEEPER_INIT_WAIT config.master)
+ZOOKEEPER_CONTAINER_PORT=$(jq -r .ZOOKEEPER_CONTAINER_PORT config.master)
+ZOOKEEPER_HOST_PORT=$(jq -r .ZOOKEEPER_HOST_PORT config.master)
 
 ###################################################
 # CONFIG SOURCING FROM PARAMS                     #
@@ -288,6 +351,11 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         -h|--help)
         help;
         exit 0
+        ;;
+        --consumer-client-id)
+        CONSUMER_CLIENT_ID="$2"
+        shift # past argument
+        shift # past value
         ;;
         --consumer-name)
         CONSUMER_NAME="$2"
@@ -304,23 +372,28 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        --kafka-internal-port-map)
-        KAFKA_INTERNAL_PORT_MAP="$2"
+        --kafka-internal-container-port)
+        KAFKA_INTERNAL_CONTAINER_PORT="$2"
         shift # past argument
         shift # past value
         ;;
-        --kafka-external-port-map)
-        KAFKA_EXTERNAL_PORT_MAP="$2"
+        --kafka-internal-host-port)
+        KAFKA_INTERNAL_HOST_PORT="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --kafka-external-container-port)
+        KAFKA_EXTERNAL_CONTAINER_PORT="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --kafka-external-host-port)
+        KAFKA_EXTERNAL_HOST_PORT="$2"
         shift # past argument
         shift # past value
         ;;
         --kafka-topic)
         KAFKA_TOPIC="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --kafka-wait)
-        KAFKA_INIT_WAIT="$2"
         shift # past argument
         shift # past value
         ;;
@@ -334,23 +407,28 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        --postgres-wait)
-        POSTGRES_INIT_WAIT="$2"
-        shift # past argument
-        shift # past value
-        ;;
         --postgres-password)
         POSTGRES_PASSWORD="$2"
         shift # past argument
         shift # past value
         ;;
-        --postgres-port-map)
-        POSTGRES_PORT_MAP="$2"
+        --postgres-container-port)
+        POSTGRES_CONTAINER_PORT="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --postgres-host-port)
+        POSTGRES_HOST_PORT="$2"
         shift # past argument
         shift # past value
         ;;
         --postgres-user)
         POSTGRES_USER="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --producer-client-id)
+        PRODUCER_CLIENT_ID="$2"
         shift # past argument
         shift # past value
         ;;
@@ -369,8 +447,13 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        --producer-port-map)
-        PRODUCER_PORT_MAP="$2"
+        --producer-container-port)
+        PRODUCER_CONTAINER_PORT="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --producer-host-port)
+        PRODUCER_HOST_PORT="$2"
         shift # past argument
         shift # past value
         ;;
@@ -388,13 +471,13 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
-        --zookeeper-port-map)
-        ZOOKEEPER_PORT_MAP="$2"
+        --zookeeper-container-port)
+        ZOOKEEPER_CONTAINER_PORT="$2"
         shift # past argument
         shift # past value
         ;;
-        --zookeeper-wait)
-        ZOOKEEPER_INIT_WAIT="$2"
+        --zookeeper-host-port)
+        ZOOKEEPER_HOST_PORT="$2"
         shift # past argument
         shift # past value
         ;;
@@ -419,55 +502,85 @@ then
 fi
 
 ############ DOCKER SETUP ############
+
 bridge_init
 get_container_names
 
-############ ZOOKEEPER INIT ############
+# ############ ZOOKEEPER INIT ############
 zookeeper_init
 
 ############  KAFKA INIT ############
 kafka_init
 
 ############  POSTGRES INIT ############
-cd ./src/db || exit
-bash db_init.sh \
---tag "$SEMVER_TAG" \
---network "$DOCKER_NETWORK" \
---postgres-name "$POSTGRES_NAME" \
---postgres-user "$POSTGRES_USER" \
---postgres-password "$POSTGRES_PASSWORD" \
---postgres-port-map "$POSTGRES_PORT_MAP" \
---postgres-wait "$POSTGRES_INIT_WAIT"
-cd ../..
 
-# ############  CONSUMER INIT ############
-cd ./src/consumer || exit
-bash consumer_init.sh \
---tag "$SEMVER_TAG" \
---network "$DOCKER_NETWORK" \
---consumer-name "$CONSUMER_NAME" \
---consumer-wait "$CONSUMER_INIT_WAIT" \
---kafka-name "$KAFKA_NAME" \
---kafka-external-port-map "$KAFKA_EXTERNAL_PORT_MAP" \
---postgres-name "$POSTGRES_NAME" \
---postgres-user "$POSTGRES_USER" \
---postgres-password "$POSTGRES_PASSWORD"
-cd ../..
+if [[ $VERBOSITY == 1 ]]
+then
+    bash ./src/db/db_init.sh \
+    --tag "$SEMVER_TAG" \
+    --network "$DOCKER_NETWORK" \
+    --postgres-name "$POSTGRES_NAME" \
+    --postgres-user "$POSTGRES_USER" \
+    --postgres-password "$POSTGRES_PASSWORD" \
+    --postgres-container-port "$POSTGRES_CONTAINER_PORT" \
+    --postgres-host-port "$POSTGRES_HOST_PORT" \
+    -v
+else
+    bash ./src/db/db_init.sh \
+    --tag "$SEMVER_TAG" \
+    --network "$DOCKER_NETWORK" \
+    --postgres-name "$POSTGRES_NAME" \
+    --postgres-user "$POSTGRES_USER" \
+    --postgres-password "$POSTGRES_PASSWORD" \
+    --postgres-container-port "$POSTGRES_CONTAINER_PORT" \
+    --postgres-host-port "$POSTGRES_HOST_PORT"
+fi
 
-# ############  PRODUCER INIT ############
+############  CONSUMER INIT ############
+if [[ $VERBOSITY == 1 ]]
+then
+    bash ./src/consumer/consumer_init.sh \
+    --tag "$SEMVER_TAG" \
+    --network "$DOCKER_NETWORK" \
+    --consumer-client-id "$CONSUMER_CLIENT_ID" \
+    --consumer-name "$CONSUMER_NAME" \
+    --kafka-name "$KAFKA_NAME" \
+    --kafka-port "$KAFKA_EXTERNAL_CONTAINER_PORT" \
+    --kafka-topic "$KAFKA_TOPIC" \
+    --postgres-name "$POSTGRES_NAME" \
+    --postgres-user "$POSTGRES_USER" \
+    --postgres-password "$POSTGRES_PASSWORD" \
+    --postgres-port "$POSTGRES_CONTAINER_PORT" \
+    -v
+else
+    bash ./src/consumer/consumer_init.sh \
+    --tag "$SEMVER_TAG" \
+    --network "$DOCKER_NETWORK" \
+    --consumer-client-id "$CONSUMER_CLIENT_ID" \
+    --consumer-name "$CONSUMER_NAME" \
+    --kafka-name "$KAFKA_NAME" \
+    --kafka-port "$KAFKA_EXTERNAL_CONTAINER_PORT" \
+    --kafka-topic "$KAFKA_TOPIC" \
+    --postgres-name "$POSTGRES_NAME" \
+    --postgres-user "$POSTGRES_USER" \
+    --postgres-password "$POSTGRES_PASSWORD" \
+    --postgres-port "$POSTGRES_CONTAINER_PORT"
+fi
+
+############  PRODUCER INIT ############
 printf "Waiting for KafkaProducer initialization ..."
-cd ./src/producer || exit
-http_server_ip=$(bash producer_init.sh \
+http_server_ip=$(bash ./src/producer/producer_init.sh \
 --tag "$SEMVER_TAG" \
 --network "$DOCKER_NETWORK" \
 --kafka-name "$KAFKA_NAME" \
---kafka-external-port-map "$KAFKA_EXTERNAL_PORT_MAP" \
+--kafka-port "$KAFKA_EXTERNAL_CONTAINER_PORT" \
+--kafka-topic "$KAFKA_TOPIC" \
+--producer-client-id "$PRODUCER_CLIENT_ID" \
 --producer-name "$PRODUCER_NAME" \
 --producer-http-rule "$PRODUCER_HTTP_RULE" \
 --producer-ingress "$PRODUCER_INGRESS_HTTP_LISTENER" \
---producer-port-map "$PRODUCER_PORT_MAP" \
---producer-wait "$PRODUCER_INIT_WAIT"  | tail -1)
-cd ../..
+--producer-container-port "$PRODUCER_CONTAINER_PORT" \
+--producer-host-port "$PRODUCER_HOST_PORT" | tail -1)
 printf "Done.\n"
 dir=$(dirname "$HTTP_LOG_FILE")
 mkdir -p "$dir"

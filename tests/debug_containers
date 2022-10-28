@@ -1,0 +1,102 @@
+# Network
+sudo docker network create av_telemetry --driver bridge
+
+
+# Zookeeper container
+sudo docker run -p 2181:2181 --name zookeeper \
+--network av_telemetry \
+-e ALLOW_ANONYMOUS_LOGIN=yes \
+-e ZOO_4LW_COMMANDS_WHITELIST="dump" \
+-e ZOO_PORT_NUMBER=2181 \
+bitnami/zookeeper:3.7.1
+
+# Check broker IDS
+echo "dump" | nc 127.0.0.1 <host port> | grep brokers
+
+# Kafka container
+sudo docker run -p 29092:29092 \
+-p 9093:9091 --name kafka-server \
+--network av_telemetry \
+--restart unless-stopped \
+-e ALLOW_PLAINTEXT_LISTENER=yes \
+-e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
+-e KAFKA_LISTENERS=PLAINTEXT://kafka-server:9092,PLAINTEXT_HOST://localhost:29092 \
+-e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-server:9092,PLAINTEXT_HOST://localhost:29092 \
+-e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181 \
+bitnami/kafka:3.3.1
+
+# Kafka debug
+
+# List Topics
+sudo docker exec -it kafka-server bash
+cd opt/bitnami/kafka/bin
+kafka-topics.sh --bootstrap-server localhost:29092 --list
+# kafka-topics.sh --bootstrap-server localhost:29092 --create --topic test_topic
+
+# Produce a message via console
+kafka-console-producer.sh --bootstrap-server localhost:29092 --topic test_topic
+
+# List consumer groups
+kafka-consumer-groups.sh --list --bootstrap-server localhost:29092
+
+# Postgres container
+sudo docker run -p 5432:5432 \
+--name postgres \
+--network av_telemetry \
+-e POSTGRES_PASSWORD=mysecretpassword \
+-e POSTGRES_USER=postgres \
+m4ttl33t/postgres:0.0.3
+
+# Postgres container (official image)
+sudo docker run -p 5431:5431 \
+--name postgres_official \
+-e POSTGRES_PASSWORD=mysecretpassword \
+-e POSTGRES_USER=postgres \
+postgres:0.0.3
+
+# inspect the database
+psql -h localhost -p 5432 -U postgres
+\c av_telemetry
+SELECT * from diag;
+
+# Consumer container
+sudo docker run --name consumer \
+--network av_telemetry \
+-e PYTHONUNBUFFERED=1 \
+-e CONSUMER_CLIENT_ID=megustaaaa \
+-e KAFKA_NAME=kafka-server \
+-e KAFKA_EXTERNAL_PORT_MAP=9092:9092 \
+-e KAFKA_TOPIC=test_topic \
+-e POSTGRES_DB=av_telemetry \
+-e POSTGRES_TABLE=diag \
+-e POSTGRES_NAME=postgres \
+-e POSTGRES_USER=postgres \
+-e POSTGRES_PASSWORD=mysecretpassword \
+-e POSTGRES_PORT_MAP=5432:5432 \
+m4ttl33t/consumer:0.0.3
+
+# Producer container
+sudo docker run -p 5000:5000 --name producer \
+--network av_telemetry \
+-e PYTHONUNBUFFERED=1 \
+-e PRODUCER_CLIENT_ID=megusta \
+-e PRODUCER_HTTP_RULE=events \
+-e PRODUCER_INGRESS_HTTP_LISTENER=0.0.0.0 \
+-e PRODUCER_PORT_MAP=5000:5000 \
+-e KAFKA_NAME=kafka-server \
+-e KAFKA_EXTERNAL_PORT_MAP=9092:9092 \
+-e KAFKA_TOPIC=test_topic \
+m4ttl33t/producer:0.0.3
+
+# Vehicle container
+sudo docker run --name vehicle \
+--network av_telemetry \
+-e PYTHONUNBUFFERED=1 \
+-e PRODUCER_HTTP_SERVER=192.168.96.6 \
+-e PRODUCER_HTTP_RULE=events \
+-e PRODUCER_PORT_MAP=5000:5000 \
+-e VEHICLE_REPORT_DELAY=3 \
+-e VEHICLE_VELOCITY_X=2 \
+-e VEHICLE_VELOCITY_Y=2 \
+-e VEHICLE_VELOCITY_Z=0 \
+m4ttl33t/vehicle:0.0.3
