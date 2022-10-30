@@ -4,7 +4,7 @@ This project demonstrates a containerized, Python-based, streaming ETL pipeline.
 
 There are two main goals:
 1. To (reliably) monitor and store real-time streaming data from a *fleet* of vehicles.
-2. To demonstrate how the infrastructure for such an application may be automatically provisioned (IAAC).
+2. To demonstrate how the infrastructure for such an application may be automatically provisioned (IAC).
 
 Here's a short blurb about how it works:
 
