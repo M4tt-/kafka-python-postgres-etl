@@ -19,8 +19,7 @@ The bash scripts rely on `jq` to parse JSON. If this is not installed in your en
     $sudo apt-get update
     $sudo apt-get install jq
 
-Ensure a Docker daemon is running and there are no services occupying ports
-9092, 5432, 2181, and 5000 (if these ports are not available, the host:container port mapping can be modified in `config.master`).
+Ensure a Docker daemon is running and there are no services occupying the `XXX_HOST_PORT` in `config.master` (or change these in `config.master`).
 
 Pull the master branch and navigate to repo root. Execute:
 
@@ -44,15 +43,14 @@ A dichotomy can be made of this project's components: server infrastructure (or 
 
 The server infrastructure has one or more of the following containers:
 
-- [m4ttl33t/postgres](https://hub.docker.com/r/m4ttl33t/postgres) -- PostgreSQL data store (small extension of official image)
+- [_/postgres](https://hub.docker.com/_/postgres) -- PostgreSQL data store (official image)
 - [m4ttl33t/consumer](https://hub.docker.com/r/m4ttl33t/consumer) -- Kafka Consumer / SQL writer
 - [m4ttl33t/producer](https://hub.docker.com/r/m4ttl33t/producer)-- Kafka Producer / HTTP server
 - [bitnami/kafka:latest](https://hub.docker.com/r/bitnami/kafka) -- Kafka broker(s)
 - [bitnami/zookeeper:latest](https://hub.docker.com/r/bitnami/zookeeper) -- Zookeeper to administrate Kafka brokers
 
 As of this revision, this infrastructure is "single-node" and operates locally for demonstration purposes. Each container
-communicates over a Docker bridge network. Ideally, most (if not all) of this infrastructure should reside in the cloud across
-several machines.
+communicates over a Docker bridge network.
 
 ### Clients
 
@@ -71,12 +69,12 @@ If you've followed the instructions in the **Getting Started** section, there ar
 that things are working as expected:
 
 1. Enter the relevant HTTP server URL into your browser. There should be a "welcome message" with an event counter that
-  increments every few seconds. Unless you've changed any `config.*` files, the port and endpoint is 5000 and 'events', respectively,
+  increments every few seconds. Unless you've changed anything in `config.master` files, the port and endpoint is 5001 and 'events', respectively,
   and the IP address should be printed to stdout (or stored in `/tmp/launch_infra_http_server.log`).
 
->Example: 172.60.49.4:5000/events
+>Example: 172.60.49.4:5001/events
 
-2. Interact with the postgres container directly through bash. you should see the entries grow every few seconds. Unless you've changed any `config.*` files,
+2. Interact with the postgres container directly through bash. You should see the entries grow every few seconds. Unless you've changed anything `config.master` files,
 
         sudo docker exec -it -u postgres postgres bash
         psql
@@ -103,7 +101,8 @@ the .pylintrc at repo root:
 This project is done all on my own time outside of work hours, so it's not where I want it to be (but it will be one day soon!).
 Near-future changes to come:
 
+- Enhance the CaC
 - Further test multi-Producer setup with Load Balancer
 - Further test multi-node Kafka cluster
 - Add web-based visualizations for streaming data
-- Add IAAC for cloud migration
+- Add IaC for cloud migration

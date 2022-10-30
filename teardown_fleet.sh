@@ -21,14 +21,11 @@ help() {
     printf "Options:\n"
 }
 
-####################################################
-# CONFIG SOURCING FROM FILE                       #
+###################################################
+# MAIN                                            #
 ###################################################
 
-
-###################################################
-# CONFIG SOURCING FROM PARAMS                     #
-###################################################
+############ SOURCE CONFIG FROM PARAMS ###################
 
 while (( "$#" )); do   # Evaluate length of param array and exit at zero
     case $1 in
@@ -46,9 +43,7 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
     esac
 done
 
-###################################################
-# MAIN                                            #
-###################################################
+############ STOP AND REMOVE ALL VEHICLE DOCKER CONTAINERS ############
 
 container_names=$(sudo docker ps -a --format "{{.Names}}" | grep -e "vehicle[0-9]\+")
 

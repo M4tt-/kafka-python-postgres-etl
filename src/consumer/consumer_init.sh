@@ -170,10 +170,116 @@ done
 # MAIN                                            #
 ###################################################
 
+############ GET REFERENCE PATH ###################
+
+MY_PATH=$(dirname "$0")            # relative
+MY_PATH=$(cd "$MY_PATH" && pwd)    # absolutized and normalized
+if [[ -z "$MY_PATH" ]]
+then
+  exit 1  # fail
+fi
+
+############ SOURCE CONFIG FROM FILE ###################
+#echo "$MY_PATH/../../config.master"
+HARDCODE_PATH="/home/matt/repos/kafka-python-postgres-etl/config.master"
+CONSUMER_CLIENT_ID=$(jq -r .CONSUMER_CLIENT_ID "$HARDCODE_PATH")
+CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$HARDCODE_PATH")
+DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$HARDCODE_PATH")
+KAFKA_NAME=$(jq -r .KAFKA_NAME "$HARDCODE_PATH")
+KAFKA_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT "$HARDCODE_PATH")
+KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC "$HARDCODE_PATH")
+POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$HARDCODE_PATH")
+POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD "$HARDCODE_PATH")
+POSTGRES_PORT=$(jq -r .POSTGRES_CONTAINER_PORT "$HARDCODE_PATH")
+POSTGRES_USER=$(jq -r .POSTGRES_USER "$HARDCODE_PATH")
+SEMVER_TAG=$(jq -r .SEMVER_TAG "$HARDCODE_PATH")
+VERBOSITY=0
+
+############ SOURCE UPDATED CONFIG FROM PARAMS ###################
+
+while (( "$#" )); do   # Evaluate length of param array and exit at zero
+    case $1 in
+        -h|--help)
+        help;
+        exit 0
+        ;;
+        --consumer-client-id)
+        CONSUMER_CLIENT_ID="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --consumer-name)
+        CONSUMER_NAME="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --kafka-name)
+        KAFKA_NAME="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --kafka-port)
+        KAFKA_PORT="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --kafka-topic)
+        KAFKA_TOPIC="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        -n|--network)
+        DOCKER_NETWORK="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --postgres-name)
+        POSTGRES_NAME="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --postgres-password)
+        POSTGRES_PASSWORD="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --postgres-port)
+        POSTGRES_PORT="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --postgres-user)
+        POSTGRES_USER="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        -t|--tag)
+        SEMVER_TAG="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        -v)
+        VERBOSITY=1
+        shift # past argument
+        ;;
+        -*)
+        echo "Unknown option $1"
+        exit 1
+        ;;
+        *)
+        echo "Bad positional argument."
+        exit 1
+        ;;
+    esac
+done
+
+
 if [[ $VERBOSITY == 1 ]]
 then
     dump_config
 fi
+
+############ DOCKER CONTAINERS: GET ############
 
 get_container_names
 

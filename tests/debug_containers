@@ -48,11 +48,22 @@ sudo docker run -p 5432:5432 \
 m4ttl33t/postgres:0.0.3
 
 # Postgres container (official image)
+cd ~/repos/kafka-python-postgres-etl/src/db
 sudo docker run -p 5431:5431 \
 --name postgres_official \
 -e POSTGRES_PASSWORD=mysecretpassword \
 -e POSTGRES_USER=postgres \
-postgres:0.0.3
+-e PGPORT=5431 \
+-v init.sql:/docker-entrypoint-initdb.d \
+postgres
+
+sudo docker run -p 5431:5431 \
+--name postgres_official \
+-e POSTGRES_PASSWORD=mysecretpassword \
+-e POSTGRES_USER=postgres \
+-e PGPORT=5431 \
+-v "$(pwd)"/src/db:/docker-entrypoint-initdb.d \
+postgres
 
 # inspect the database
 psql -h localhost -p 5432 -U postgres

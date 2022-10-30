@@ -70,27 +70,35 @@ get_container_names() {
 
 }
 
-####################################################
-# CONFIG SOURCING FROM FILE                       #
+###################################################
+# MAIN                                            #
 ###################################################
 
-pwd
-DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
-KAFKA_NAME=$(jq -r .KAFKA_NAME config.master)
-KAFKA_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT config.master)
-KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC config.master)
-PRODUCER_CLIENT_ID=$(jq -r .PRODUCER_CLIENT_ID config.master)
-PRODUCER_NAME=$(jq -r .PRODUCER_NAME config.master)
-PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE config.master)
-PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER config.master)
-PRODUCER_CONTAINER_PORT=$(jq -r .PRODUCER_CONTAINER_PORT config.master)
-PRODUCER_HOST_PORT=$(jq -r .PRODUCER_HOST_PORT config.master)
-SEMVER_TAG=$(jq -r .SEMVER_TAG config.master)
+############ GET REFERENCE PATH ###################
+
+MY_PATH=$(dirname "$0")            # relative
+MY_PATH=$(cd "$MY_PATH" && pwd)    # absolutized and normalized
+if [[ -z "$MY_PATH" ]]
+then
+  exit 1  # fail
+fi
+
+############ SOURCE CONFIG FROM FILE ###################
+HARDCODE_PATH="/home/matt/repos/kafka-python-postgres-etl/config.master"
+DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$HARDCODE_PATH")
+KAFKA_NAME=$(jq -r .KAFKA_NAME "$HARDCODE_PATH")
+KAFKA_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT "$HARDCODE_PATH")
+KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC "$HARDCODE_PATH")
+PRODUCER_CLIENT_ID=$(jq -r .PRODUCER_CLIENT_ID "$HARDCODE_PATH")
+PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$HARDCODE_PATH")
+PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE "$HARDCODE_PATH")
+PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER "$HARDCODE_PATH")
+PRODUCER_CONTAINER_PORT=$(jq -r .PRODUCER_CONTAINER_PORT "$HARDCODE_PATH")
+PRODUCER_HOST_PORT=$(jq -r .PRODUCER_HOST_PORT "$HARDCODE_PATH")
+SEMVER_TAG=$(jq -r .SEMVER_TAG "$HARDCODE_PATH")
 VERBOSITY=0
 
-###################################################
-# CONFIG SOURCING FROM PARAMS                     #
-###################################################
+############ SOURCE UPDATED CONFIG FROM PARAMS ###################
 
 while (( "$#" )); do   # Evaluate length of param array and exit at zero
     case $1 in
@@ -168,9 +176,7 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
     esac
 done
 
-###################################################
-# MAIN                                            #
-###################################################
+############ DOCKER CONTAINERS: GET ############
 
 get_container_names
 
@@ -180,6 +186,7 @@ then
 fi
 
 ############  PRODUCER INIT ############
+
 if [[ "$container_names" == *"$PRODUCER_NAME"* ]]
 then
 

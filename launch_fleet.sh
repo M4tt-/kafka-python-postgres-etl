@@ -63,9 +63,20 @@ dump_config() {
     printf "VERBOSITY: %s\n\n" "$VERBOSITY"
 }
 
-####################################################
-# CONFIG SOURCING FROM FILE                       #
 ###################################################
+# MAIN                                            #
+###################################################
+
+############ GET REFERENCE PATH ###################
+
+MY_PATH=$(dirname "$0")            # relative
+MY_PATH=$(cd "$MY_PATH" && pwd)    # absolutized and normalized
+if [[ -z "$MY_PATH" ]]
+then
+  exit 1  # fail
+fi
+
+############ SOURCE CONFIG FROM FILE ###################
 
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
 HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE config.master)
@@ -81,9 +92,7 @@ VEHICLE_VELOCITY_Z=$(jq -r .VEHICLE_VELOCITY_Z config.master)
 SEMVER_TAG=$(jq -r .SEMVER_TAG config.master)
 VERBOSITY=0
 
-###################################################
-# CONFIG SOURCING FROM PARAMS                     #
-###################################################
+############ SOURCE UPDATED CONFIG FROM PARAMS ###################
 
 while (( "$#" )); do   # Evaluate length of param array and exit at zero
     case $1 in
@@ -161,16 +170,7 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
     esac
 done
 
-if [[ $VERBOSITY == 1 ]]
-then
-    dump_config
-fi
-
-###################################################
-# MAIN                                            #
-###################################################
-
-container_names=$(sudo docker ps -a --format "{{.Names}}")
+############ SANITIZE INPUT ############
 
 if ! [[ "$NUM_VEHICLES" =~ ^[0-9]+$ ]]
     then
@@ -178,7 +178,17 @@ if ! [[ "$NUM_VEHICLES" =~ ^[0-9]+$ ]]
         exit 1
 fi
 
+if [[ $VERBOSITY == 1 ]]
+then
+    dump_config
+fi
+
+############ DOCKER CONTAINERS: GET ############
+
+container_names=$(sudo docker ps -a --format "{{.Names}}")
+
 ############  VEHICLE INIT ############
+
 printf "Preparing %s Vehicles ...\n" "$NUM_VEHICLES"
 if [[ "$VERBOSITY" == 1 ]]
 then

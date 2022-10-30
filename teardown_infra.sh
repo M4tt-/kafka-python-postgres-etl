@@ -37,20 +37,29 @@ help() {
     printf "  --zookeeper-name: Zookeeper container name.\n"
 }
 
-####################################################
-# CONFIG SOURCING FROM FILE                       #
+###################################################
+# MAIN                                            #
 ###################################################
 
-CONSUMER_NAME=$(jq -r .CONSUMER_NAME config.master)
-DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
-KAFKA_NAME=$(jq -r .KAFKA_NAME config.master)
-POSTGRES_NAME=$(jq -r .POSTGRES_NAME config.master)
-PRODUCER_NAME=$(jq -r .PRODUCER_NAME config.master)
-ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME config.master)
+############ GET REFERENCE PATH ###################
 
-###################################################
-# CONFIG SOURCING FROM PARAMS                     #
-###################################################
+MY_PATH=$(dirname "$0")            # relative
+MY_PATH=$(cd "$MY_PATH" && pwd)    # absolutized and normalized
+if [[ -z "$MY_PATH" ]]
+then
+  exit 1  # fail
+fi
+
+############ SOURCE CONFIG FROM FILE ###################
+
+CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$MY_PATH"/config.master)
+DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MY_PATH"/config.master)
+KAFKA_NAME=$(jq -r .KAFKA_NAME "$MY_PATH"/config.master)
+POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$MY_PATH"/config.master)
+PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$MY_PATH"/config.master)
+ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME "$MY_PATH"/config.master)
+
+############ SOURCE UPDATED CONFIG FROM PARAMS ###################
 
 while (( "$#" )); do   # Evaluate length of param array and exit at zero
     case $1 in
@@ -99,9 +108,7 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
     esac
 done
 
-###################################################
-# MAIN                                            #
-###################################################
+############ DOCKER CONTAINERS: GET ############
 
 container_names=$(sudo docker ps -a --format "{{.Names}}")
 

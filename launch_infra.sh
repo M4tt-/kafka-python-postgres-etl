@@ -13,8 +13,8 @@
 # The initialized containers are:
 #    1. bitnami/zookeeper: kafka cluster management
 #    2. bitnami/kafka: kafka server
-#    3. m4ttl33t/producer: KafkaProducer
-#    4. m4ttl33t/postgres: Postgres data store
+#    3. _/postgres: Postgres data store
+#    4. m4ttl33t/producer: KafkaProducer
 #    5. m4ttl33t/consumer: KafkaConsumer
 
 # Usage: see launch_infra.sh --help
@@ -253,6 +253,65 @@ kafka_init() {
 }
 
 ###################################################
+# FUNCTION: POSTGRES INIT                         #
+###################################################
+
+postgres_init() {
+
+    if [[ "$container_names" == *"$POSTGRES_NAME"* ]]
+    then
+
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            printf "%s container already exists -- re-creating!\n" "$POSTGRES_NAME"
+        fi
+
+        # Stop and remove Postgres container
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            sudo docker stop "$POSTGRES_NAME"
+            sudo docker rm "$POSTGRES_NAME"
+        else
+            sudo docker stop "$POSTGRES_NAME">/dev/null
+            sudo docker rm "$POSTGRES_NAME">/dev/null
+        fi
+    fi
+
+    # Start the Postgres container
+    if [[ "$VERBOSITY" == 1 ]]
+    then
+        sudo docker run -p "${POSTGRES_HOST_PORT}":"${POSTGRES_CONTAINER_PORT}" \
+        --name "$POSTGRES_NAME" \
+        --network "$DOCKER_NETWORK" \
+        --restart unless-stopped \
+        -e POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
+        -e POSTGRES_USER="${POSTGRES_USER}" \
+        -e PGPORT="${POSTGRES_CONTAINER_PORT}" \
+        -v "$MY_PATH"/src/db:/docker-entrypoint-initdb.d \
+        -d postgres:15.0
+    else
+        sudo docker run -p "${POSTGRES_HOST_PORT}":"${POSTGRES_CONTAINER_PORT}" \
+        --name "$POSTGRES_NAME" \
+        --network "$DOCKER_NETWORK" \
+        --restart unless-stopped \
+        -e POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
+        -e POSTGRES_USER="${POSTGRES_USER}" \
+        -e PGPORT="${POSTGRES_CONTAINER_PORT}" \
+        -v "$MY_PATH"/src/db:/docker-entrypoint-initdb.d \
+        -d postgres:15.0>/dev/null
+    fi
+
+    printf "Waiting for Postgres initialization ..."
+    if [[ "$VERBOSITY" == 1 ]]
+    then
+        timeout 90s bash -c "until sudo docker exec ${POSTGRES_NAME} pg_isready ; do sleep 0.1 ; done"
+    else
+        timeout 90s bash -c "until sudo docker exec ${POSTGRES_NAME} pg_isready ; do sleep 0.1 ; done" > /dev/null
+    fi
+    printf "Done.\n"
+}
+
+###################################################
 # FUNCTION: ZOOKEEPER INIT                        #
 ###################################################
 
@@ -311,40 +370,51 @@ zookeeper_init() {
     printf "Done.\n"
 }
 
-####################################################
-# CONFIG SOURCING FROM FILE                       #
+###################################################
+# MAIN                                            #
 ###################################################
 
-CONSUMER_CLIENT_ID=$(jq -r .CONSUMER_CLIENT_ID config.master)
-CONSUMER_NAME=$(jq -r .CONSUMER_NAME config.master)
-DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
-HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE config.master)
-KAFKA_NAME=$(jq -r .KAFKA_NAME config.master)
-KAFKA_EXTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT config.master)
-KAFKA_EXTERNAL_HOST_PORT=$(jq -r .KAFKA_EXTERNAL_HOST_PORT config.master)
-KAFKA_INTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_INTERNAL_CONTAINER_PORT config.master)
-KAFKA_INTERNAL_HOST_PORT=$(jq -r .KAFKA_INTERNAL_HOST_PORT config.master)
-KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC config.master)
-POSTGRES_NAME=$(jq -r .POSTGRES_NAME config.master)
-POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD config.master)
-POSTGRES_CONTAINER_PORT=$(jq -r .POSTGRES_CONTAINER_PORT config.master)
-POSTGRES_HOST_PORT=$(jq -r .POSTGRES_HOST_PORT config.master)
-POSTGRES_USER=$(jq -r .POSTGRES_USER config.master)
-PRODUCER_CLIENT_ID=$(jq -r .PRODUCER_CLIENT_ID config.master)
-PRODUCER_NAME=$(jq -r .PRODUCER_NAME config.master)
-PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE config.master)
-PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER config.master)
-PRODUCER_CONTAINER_PORT=$(jq -r .PRODUCER_CONTAINER_PORT config.master)
-PRODUCER_HOST_PORT=$(jq -r .PRODUCER_HOST_PORT config.master)
-SEMVER_TAG=$(jq -r .SEMVER_TAG config.master)
+printf "Printing MY_ENV_VAR: %s\n" "$MY_ENV_VAR"
+
+############ GET REFERENCE PATH ###################
+
+MY_PATH=$(dirname "$0")            # relative
+MY_PATH=$(cd "$MY_PATH" && pwd)    # absolutized and normalized
+if [[ -z "$MY_PATH" ]]
+then
+  exit 1  # fail
+fi
+
+############ SOURCE CONFIG FROM FILE ###################
+
+CONSUMER_CLIENT_ID=$(jq -r .CONSUMER_CLIENT_ID "$MY_PATH"/config.master)
+CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$MY_PATH"/config.master)
+DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MY_PATH"/config.master)
+HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE "$MY_PATH"/config.master)
+KAFKA_NAME=$(jq -r .KAFKA_NAME "$MY_PATH"/config.master)
+KAFKA_EXTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT "$MY_PATH"/config.master)
+KAFKA_EXTERNAL_HOST_PORT=$(jq -r .KAFKA_EXTERNAL_HOST_PORT "$MY_PATH"/config.master)
+KAFKA_INTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_INTERNAL_CONTAINER_PORT "$MY_PATH"/config.master)
+KAFKA_INTERNAL_HOST_PORT=$(jq -r .KAFKA_INTERNAL_HOST_PORT "$MY_PATH"/config.master)
+KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC "$MY_PATH"/config.master)
+POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$MY_PATH"/config.master)
+POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD "$MY_PATH"/config.master)
+POSTGRES_CONTAINER_PORT=$(jq -r .POSTGRES_CONTAINER_PORT "$MY_PATH"/config.master)
+POSTGRES_HOST_PORT=$(jq -r .POSTGRES_HOST_PORT "$MY_PATH"/config.master)
+POSTGRES_USER=$(jq -r .POSTGRES_USER "$MY_PATH"/config.master)
+PRODUCER_CLIENT_ID=$(jq -r .PRODUCER_CLIENT_ID "$MY_PATH"/config.master)
+PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$MY_PATH"/config.master)
+PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE "$MY_PATH"/config.master)
+PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER "$MY_PATH"/config.master)
+PRODUCER_CONTAINER_PORT=$(jq -r .PRODUCER_CONTAINER_PORT "$MY_PATH"/config.master)
+PRODUCER_HOST_PORT=$(jq -r .PRODUCER_HOST_PORT "$MY_PATH"/config.master)
+SEMVER_TAG=$(jq -r .SEMVER_TAG "$MY_PATH"/config.master)
 VERBOSITY=0
-ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME config.master)
-ZOOKEEPER_CONTAINER_PORT=$(jq -r .ZOOKEEPER_CONTAINER_PORT config.master)
-ZOOKEEPER_HOST_PORT=$(jq -r .ZOOKEEPER_HOST_PORT config.master)
+ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME "$MY_PATH"/config.master)
+ZOOKEEPER_CONTAINER_PORT=$(jq -r .ZOOKEEPER_CONTAINER_PORT "$MY_PATH"/config.master)
+ZOOKEEPER_HOST_PORT=$(jq -r .ZOOKEEPER_HOST_PORT "$MY_PATH"/config.master)
 
-###################################################
-# CONFIG SOURCING FROM PARAMS                     #
-###################################################
+############ SOURCE UPDATED CONFIG FROM PARAMS ###################
 
 while (( "$#" )); do   # Evaluate length of param array and exit at zero
     case $1 in
@@ -492,18 +562,15 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
     esac
 done
 
-###################################################
-# MAIN                                            #
-###################################################
-
 if [[ $VERBOSITY == 1 ]]
 then
     dump_config
 fi
 
-############ DOCKER SETUP ############
-
+############ DOCKER NETWORK SETUP ############
 bridge_init
+
+############ DOCKER CONTAINERS: GET ############
 get_container_names
 
 # ############ ZOOKEEPER INIT ############
@@ -513,33 +580,12 @@ zookeeper_init
 kafka_init
 
 ############  POSTGRES INIT ############
-
-if [[ $VERBOSITY == 1 ]]
-then
-    bash ./src/db/db_init.sh \
-    --tag "$SEMVER_TAG" \
-    --network "$DOCKER_NETWORK" \
-    --postgres-name "$POSTGRES_NAME" \
-    --postgres-user "$POSTGRES_USER" \
-    --postgres-password "$POSTGRES_PASSWORD" \
-    --postgres-container-port "$POSTGRES_CONTAINER_PORT" \
-    --postgres-host-port "$POSTGRES_HOST_PORT" \
-    -v
-else
-    bash ./src/db/db_init.sh \
-    --tag "$SEMVER_TAG" \
-    --network "$DOCKER_NETWORK" \
-    --postgres-name "$POSTGRES_NAME" \
-    --postgres-user "$POSTGRES_USER" \
-    --postgres-password "$POSTGRES_PASSWORD" \
-    --postgres-container-port "$POSTGRES_CONTAINER_PORT" \
-    --postgres-host-port "$POSTGRES_HOST_PORT"
-fi
+postgres_init
 
 ############  CONSUMER INIT ############
 if [[ $VERBOSITY == 1 ]]
 then
-    bash ./src/consumer/consumer_init.sh \
+    bash "$MY_PATH"/src/consumer/consumer_init.sh \
     --tag "$SEMVER_TAG" \
     --network "$DOCKER_NETWORK" \
     --consumer-client-id "$CONSUMER_CLIENT_ID" \
@@ -553,7 +599,7 @@ then
     --postgres-port "$POSTGRES_CONTAINER_PORT" \
     -v
 else
-    bash ./src/consumer/consumer_init.sh \
+    bash "$MY_PATH"/src/consumer/consumer_init.sh \
     --tag "$SEMVER_TAG" \
     --network "$DOCKER_NETWORK" \
     --consumer-client-id "$CONSUMER_CLIENT_ID" \
@@ -569,7 +615,7 @@ fi
 
 ############  PRODUCER INIT ############
 printf "Waiting for KafkaProducer initialization ..."
-http_server_ip=$(bash ./src/producer/producer_init.sh \
+http_server_ip=$(bash "$MY_PATH"/src/producer/producer_init.sh \
 --tag "$SEMVER_TAG" \
 --network "$DOCKER_NETWORK" \
 --kafka-name "$KAFKA_NAME" \
