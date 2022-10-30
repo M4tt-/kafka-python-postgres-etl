@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.3] - 2022-10-30
 
-Removed extraneous config from containers, e.g., default configs, etc.
+TL;DR: Removed extraneous config from containers, enhanced container bring up robustness, removed extended postgres image.
 
 ### Added
 
