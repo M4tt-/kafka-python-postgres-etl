@@ -9,6 +9,8 @@
 
 # Usage: see teardown_fleet.sh --help
 
+set -euo pipefail
+
 ###################################################
 # FUNCTION: HELP MENU                             #
 ###################################################

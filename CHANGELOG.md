@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.4] - 2022-10-31
+
+TL;DR: Reorganized folder structure, revised command line options.
+
+### Added
+
+- `scripts/`: a top-level folder containing all bash scripts
+- `config/`: a top-level folder containing config
+- `set -euo pipefail` in bash scripts
+
+### Changed
+
+- Command line options for bash scripts reduced to take a config file
+
+### Deprecated
+
+
+### Removed
+
+- Command line parsing of individual environment variables
+
 ## [0.0.3] - 2022-10-30
 
 TL;DR: Removed extraneous config from containers, enhanced container bring up robustness, removed extended postgres image.
@@ -17,6 +38,7 @@ TL;DR: Removed extraneous config from containers, enhanced container bring up ro
 - `PRODUCER_CLIENT_ID` to `config.master`
 - `VEHICLE_REPORT_DELAY` to `config.master`
 - `VEHICLE_VELOCITY_X/Y/Z` to `config.master`
+- Bugfixes for arbitrary port map setting
 
 ### Changed
 

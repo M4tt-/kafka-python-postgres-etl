@@ -19,6 +19,8 @@
 
 # Usage: see teardown_infra.sh --help
 
+set -euo pipefail
+
 ###################################################
 # FUNCTION: HELP MENU                             #
 ###################################################
@@ -26,40 +28,16 @@
 help() {
 
     printf "\nteardown_infra.sh -- Tear down the data pipeline infrastructure (containers).\n\n"
-
     printf "Usage: bash teardown_infra.sh [options]\n\n"
     printf "Options:\n"
-    printf "  -n, --network: Docker network name.\n"
-    printf "  --consumer-name: KafkaConsumer container name.\n"
-    printf "  --kafka-name: Kafka container name.\n"
-    printf "  --postgres-name: The name of the Postgres container.\n"
-    printf "  --producer-name: The name of the KafkaProducer container.\n"
-    printf "  --zookeeper-name: Zookeeper container name.\n"
+    printf "  --config | -c: Location of config file. If not specified, looks for MASTER_CONFIG env var.\n"
 }
 
 ###################################################
 # MAIN                                            #
 ###################################################
 
-############ GET REFERENCE PATH ###################
-
-MY_PATH=$(dirname "$0")            # relative
-MY_PATH=$(cd "$MY_PATH" && pwd)    # absolutized and normalized
-if [[ -z "$MY_PATH" ]]
-then
-  exit 1  # fail
-fi
-
-############ SOURCE CONFIG FROM FILE ###################
-
-CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$MY_PATH"/config.master)
-DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MY_PATH"/config.master)
-KAFKA_NAME=$(jq -r .KAFKA_NAME "$MY_PATH"/config.master)
-POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$MY_PATH"/config.master)
-PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$MY_PATH"/config.master)
-ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME "$MY_PATH"/config.master)
-
-############ SOURCE UPDATED CONFIG FROM PARAMS ###################
+############# PARSE PARAMS ###################
 
 while (( "$#" )); do   # Evaluate length of param array and exit at zero
     case $1 in
@@ -67,33 +45,8 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         help;
         exit 0
         ;;
-        --consumer-name)
-        CONSUMER_NAME="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --kafka-name)
-        KAFKA_NAME="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        -n|--network)
-        DOCKER_NETWORK="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --postgres-name)
-        POSTGRES_NAME="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-name)
-        PRODUCER_NAME="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --zookeeper-name)
-        ZOOKEEPER_NAME="$2"
+        --config|-c)
+        MASTER_CONFIG="$2"
         shift # past argument
         shift # past value
         ;;
@@ -108,12 +61,21 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
     esac
 done
 
+############ SOURCE CONFIG FROM FILE ###################
+
+CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$MASTER_CONFIG")
+DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MASTER_CONFIG")
+KAFKA_NAME=$(jq -r .KAFKA_NAME "$MASTER_CONFIG")
+POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$MASTER_CONFIG")
+PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$MASTER_CONFIG")
+ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME "$MASTER_CONFIG")
+
 ############ DOCKER CONTAINERS: GET ############
 
 container_names=$(sudo docker ps -a --format "{{.Names}}")
 
 ############  CONSUMER TEARDOWN ############
-if [[ "$container_names" == *"$PRODUCER_NAME"* ]]
+if [[ "$container_names" == *"$CONSUMER_NAME"* ]]
 then
     printf "Stopping %s ..." "$CONSUMER_NAME"
     sudo docker stop "$CONSUMER_NAME">/dev/null

@@ -5,14 +5,15 @@
 # This script initializes KafkaProducer/HTTP Server Docker container.
 
 # The configuration for the containers can be sourced in two different ways:
-#    1. Through config.producer (default)
-#    2. Through command line options
-# If command line options are specified, they will take precedence.
+#    1. Through environment variable PRODUCER_CONFIG (lowest priority)
+#    2. Through command line options (highest priority)
 
 # The initialized containers are:
 #    1. m4ttl33t/producer: KafkaProducer
 
 # Usage: see producer_init.sh --help
+
+set -euo pipefail
 
 ###################################################
 # FUNCTION: HELP MENU                             #
@@ -21,21 +22,11 @@
 help() {
 
     printf "\nproducer_init.sh -- Initialize the KafkaProducer/HTTP Server container.\n\n"
-
     printf "Usage: bash producer_init.sh [options]\n\n"
     printf "Flags:\n"
     printf "  -v: Turn on verbosity.\n\n"
     printf "Options:\n"
-    printf "  -t, --tag: Semver tag name of Docker images to pull.\n"
-    printf "  -n, --network: Docker network name.\n"
-    printf "  --kafka-name: Kafka container name.\n"
-    printf "  --kafka-port: Kafka port, e.g., 9092.\n"
-    printf "  --producer-client-id: KafkaProducer client ID.\n"
-    printf "  --producer-name: The name of the KafkaProducer container.\n"
-    printf "  --producer-http-rule: The http endpoint (URL suffix) for KafkaProducer (HTTP server).\n"
-    printf "  --producer-ingress: The ingress listener of HTTP server, e.g., 0.0.0.0\n"
-    printf "  --producer-container-port: The KafkaProducer container port, e.g., 5000.\n"
-    printf "  --producer-host-port: The KafkaProducer host port, e.g., 5000.\n"
+    printf "  --config | -c: Location of config file. If not specified, looks for PRODUCER_CONFIG env var.\n"
 }
 
 ###################################################
@@ -44,7 +35,7 @@ help() {
 
 dump_config() {
 
-    printf "\nSourced configuration (master):\n\n"
+    printf "\nSourced configuration (%s):\n\n" "$PRODUCER_CONFIG"
     printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
     printf "KAFKA_NAME: %s\n" "$KAFKA_NAME"
     printf "KAFKA_PORT: %s\n" "$KAFKA_PORT"
@@ -74,90 +65,16 @@ get_container_names() {
 # MAIN                                            #
 ###################################################
 
-############ GET REFERENCE PATH ###################
-
-MY_PATH=$(dirname "$0")            # relative
-MY_PATH=$(cd "$MY_PATH" && pwd)    # absolutized and normalized
-if [[ -z "$MY_PATH" ]]
-then
-  exit 1  # fail
-fi
-
-############ SOURCE CONFIG FROM FILE ###################
-HARDCODE_PATH="/home/matt/repos/kafka-python-postgres-etl/config.master"
-DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$HARDCODE_PATH")
-KAFKA_NAME=$(jq -r .KAFKA_NAME "$HARDCODE_PATH")
-KAFKA_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT "$HARDCODE_PATH")
-KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC "$HARDCODE_PATH")
-PRODUCER_CLIENT_ID=$(jq -r .PRODUCER_CLIENT_ID "$HARDCODE_PATH")
-PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$HARDCODE_PATH")
-PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE "$HARDCODE_PATH")
-PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER "$HARDCODE_PATH")
-PRODUCER_CONTAINER_PORT=$(jq -r .PRODUCER_CONTAINER_PORT "$HARDCODE_PATH")
-PRODUCER_HOST_PORT=$(jq -r .PRODUCER_HOST_PORT "$HARDCODE_PATH")
-SEMVER_TAG=$(jq -r .SEMVER_TAG "$HARDCODE_PATH")
+############# PARSE PARAMS ###################
 VERBOSITY=0
-
-############ SOURCE UPDATED CONFIG FROM PARAMS ###################
-
 while (( "$#" )); do   # Evaluate length of param array and exit at zero
     case $1 in
         -h|--help)
         help;
         exit 0
         ;;
-        --kafka-name)
-        KAFKA_NAME="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --kafka-port)
-        KAFKA_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --kafka-topic)
-        KAFKA_TOPIC="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        -n|--network)
-        DOCKER_NETWORK="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-client-id)
-        PRODUCER_CLIENT_ID="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-name)
-        PRODUCER_NAME="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-http-rule)
-        PRODUCER_HTTP_RULE="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-ingress)
-        PRODUCER_INGRESS_HTTP_LISTENER="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-container-port)
-        PRODUCER_CONTAINER_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-host-port)
-        PRODUCER_HOST_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        -t|--tag)
-        SEMVER_TAG="$2"
+        --config|-c)
+        PRODUCER_CONFIG="$2"
         shift # past argument
         shift # past value
         ;;
@@ -175,6 +92,20 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         ;;
     esac
 done
+
+############ LOAD CONFIG ###################
+
+DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$PRODUCER_CONFIG")
+KAFKA_NAME=$(jq -r .KAFKA_NAME "$PRODUCER_CONFIG")
+KAFKA_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT "$PRODUCER_CONFIG")
+KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC "$PRODUCER_CONFIG")
+PRODUCER_CLIENT_ID=$(jq -r .PRODUCER_CLIENT_ID "$PRODUCER_CONFIG")
+PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$PRODUCER_CONFIG")
+PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE "$PRODUCER_CONFIG")
+PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER "$PRODUCER_CONFIG")
+PRODUCER_CONTAINER_PORT=$(jq -r .PRODUCER_CONTAINER_PORT "$PRODUCER_CONFIG")
+PRODUCER_HOST_PORT=$(jq -r .PRODUCER_HOST_PORT "$PRODUCER_CONFIG")
+SEMVER_TAG=$(jq -r .SEMVER_TAG "$PRODUCER_CONFIG")
 
 ############ DOCKER CONTAINERS: GET ############
 

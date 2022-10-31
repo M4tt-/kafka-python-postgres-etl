@@ -17,6 +17,8 @@
 
 # Usage: see launch_fleet.sh --help
 
+set -euo pipefail
+
 ###################################################
 # FUNCTION: HELP MENU                             #
 ###################################################
@@ -29,17 +31,9 @@ help() {
     printf "Flags:\n"
     printf "  -v: Turn on verbosity.\n\n"
     printf "Options:\n"
-    printf "  -t, --tag: Semver tag name of Docker images to pull.\n"
-    printf "  -n, --network: Docker network name.\n"
-    printf "  --http-log-file: The full path to store the log of HTTP server host name.\n"
-    printf "  --http-host: The HTTP server host name. Overrides anything found in http-log-file.\n"
-    printf "  --num-vehicles: The number of Vehicle containers to spin up.\n"
-    printf "  --producer-http-rule: The http endpoint (URL suffix) for KafkaProducer (HTTP server).\n"
-    printf "  --producer-http-port: The KafkaProducer port, e.g., 5000.\n"
-    printf "  --vehicle-report-delay: The delay between http requests of vehicle diagnostics.\n"
-    printf "  --vehicle-velocity-x: The vehicle velocity along x axis in m/s.\n"
-    printf "  --vehicle-velocity-y: The vehicle velocity along y axis in m/s.\n"
-    printf "  --vehicle-velocity-z: The vehicle velocity along z axis in m/s.\n"
+    printf "  --config | -c: Location of config file. If not specified, looks for MASTER_CONFIG env var.\n"
+    printf "  --host: The HTTP Server host to communicate with, e.g., 172.10.0.24.\n"
+    printf "  --num-vehicles | -n: The number of vehicles to spawn in the fleet.\n"
 }
 
 ###################################################
@@ -48,7 +42,7 @@ help() {
 
 dump_config() {
 
-    printf "\nSourced configuration:\n\n"
+    printf "\nSourced configuration (%s):\n\n" "$MASTER_CONFIG"
     printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
     printf "HTTP_LOG_FILE: %s\n" "$HTTP_LOG_FILE"
     printf "NUM_VEHICLES: %s\n" "$NUM_VEHICLES"
@@ -67,91 +61,27 @@ dump_config() {
 # MAIN                                            #
 ###################################################
 
-############ GET REFERENCE PATH ###################
-
-MY_PATH=$(dirname "$0")            # relative
-MY_PATH=$(cd "$MY_PATH" && pwd)    # absolutized and normalized
-if [[ -z "$MY_PATH" ]]
-then
-  exit 1  # fail
-fi
-
-############ SOURCE CONFIG FROM FILE ###################
-
-DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK config.master)
-HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE config.master)
-HTTP_HOST=""
+############# PARSE PARAMS ###################
 NUM_VEHICLES=1
-PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE config.master)
-PRODUCER_HTTP_SERVER=$(tail -1 "$HTTP_LOG_FILE")
-PRODUCER_HTTP_PORT=$(jq -r .PRODUCER_CONTAINER_PORT config.master)
-VEHICLE_REPORT_DELAY=$(jq -r .VEHICLE_REPORT_DELAY config.master)
-VEHICLE_VELOCITY_X=$(jq -r .VEHICLE_VELOCITY_X config.master)
-VEHICLE_VELOCITY_Y=$(jq -r .VEHICLE_VELOCITY_Y config.master)
-VEHICLE_VELOCITY_Z=$(jq -r .VEHICLE_VELOCITY_Z config.master)
-SEMVER_TAG=$(jq -r .SEMVER_TAG config.master)
-VERBOSITY=0
-
-############ SOURCE UPDATED CONFIG FROM PARAMS ###################
-
+HTTP_HOST=""
 while (( "$#" )); do   # Evaluate length of param array and exit at zero
     case $1 in
         -h|--help)
         help;
         exit 0
         ;;
-        -n|--network)
-        DOCKER_NETWORK="$2"
+        --config|-c)
+        MASTER_CONFIG="$2"
         shift # past argument
         shift # past value
         ;;
-        --http-log-file)
-        HTTP_LOG_FILE="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --http-host)
+        --host)
         HTTP_HOST="$2"
         shift # past argument
         shift # past value
         ;;
-        --producer-http-rule)
-        PRODUCER_HTTP_RULE="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-http-port)
-        PRODUCER_HTTP_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --num-vehicles)
+        --num-vehicles|-n)
         NUM_VEHICLES="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        -t|--tag)
-        SEMVER_TAG="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --vehicle-report-delay)
-        VEHICLE_REPORT_DELAY="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --vehicle-velocity_x)
-        VEHICLE_VELOCITY_X="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --vehicle-velocity_y)
-        VEHICLE_VELOCITY_Y="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --vehicle-velocity_z)
-        VEHICLE_VELOCITY_Z="$2"
         shift # past argument
         shift # past value
         ;;
@@ -169,6 +99,19 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         ;;
     esac
 done
+
+############ SOURCE CONFIG FROM FILE ###################
+
+DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MASTER_CONFIG")
+HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE "$MASTER_CONFIG")
+PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE "$MASTER_CONFIG")
+PRODUCER_HTTP_SERVER=$(tail -1 "$HTTP_LOG_FILE")
+PRODUCER_HTTP_PORT=$(jq -r .PRODUCER_CONTAINER_PORT "$MASTER_CONFIG")
+VEHICLE_REPORT_DELAY=$(jq -r .VEHICLE_REPORT_DELAY "$MASTER_CONFIG")
+VEHICLE_VELOCITY_X=$(jq -r .VEHICLE_VELOCITY_X "$MASTER_CONFIG")
+VEHICLE_VELOCITY_Y=$(jq -r .VEHICLE_VELOCITY_Y "$MASTER_CONFIG")
+VEHICLE_VELOCITY_Z=$(jq -r .VEHICLE_VELOCITY_Z "$MASTER_CONFIG")
+SEMVER_TAG=$(jq -r .SEMVER_TAG "$MASTER_CONFIG")
 
 ############ SANITIZE INPUT ############
 

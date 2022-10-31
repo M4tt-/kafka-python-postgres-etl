@@ -19,6 +19,8 @@
 
 # Usage: see launch_infra.sh --help
 
+#set -euo pipefail
+
 ###################################################
 # FUNCTION: HELP MENU                             #
 ###################################################
@@ -26,38 +28,11 @@
 help() {
 
     printf "\ninit.sh -- Initialize the data pipeline infrastructure (containers).\n\n"
-
     printf "Usage: bash init.sh [options]\n\n"
     printf "Flags:\n"
     printf "  -v: Turn on verbosity.\n\n"
     printf "Options:\n"
-    printf "  -t, --tag: Semver tag name of Docker images to pull.\n"
-    printf "  -n, --network: Docker network name.\n"
-    printf "  --consumer-client-id: KafkaConsumer client ID.\n"
-    printf "  --consumer-name: KafkaConsumer container name.\n"
-    printf "  --http-log-file: The full path to store the log of HTTP server host name.\n"
-    printf "  --kafka-name: Kafka container name.\n"
-    printf "  --kafka-internal-container-port: Kafka internal container port, e.g., 29092.\n"
-    printf "  --kafka-internal-host-port: Kafka internal host port, e.g., 29092.\n"
-    printf "  --kafka-external-container-port: Kafka external container port, e.g., 9092.\n"
-    printf "  --kafka-external-host-port: Kafka external host port, e.g., 9092.\n"
-    printf "  --postgres-name: The name of the Postgres container.\n"
-    printf "  --postgres-wait: The delay to wait after Postgres is started in seconds.\n"
-    printf "  --postgres-user: The name of the Postgres user.\n"
-    printf "  --postgres-password: The name of the Postgres password.\n"
-    printf "  --postgres-container-port: The Postgres container port, e.g., 5432.\n"
-    printf "  --postgres-host-port: The Postgres host port, e.g., 5432.\n"
-    printf "  --producer-client-id: KafkaProducer client ID.\n"
-    printf "  --producer-name: The name of the KafkaProducer container.\n"
-    printf "  --producer-http-rule: The http endpoint (URL suffix) for KafkaProducer (HTTP server).\n"
-    printf "  --producer-ingress: The ingress listener of HTTP server, e.g., 0.0.0.0\n"
-    printf "  --producer-container-port: The KafkaProducer container port, e.g., 5000.\n"
-    printf "  --producer-host-port: The KafkaProducer host port, e.g., 5000.\n"
-    printf "  --postgres-container-port: The Postgres container port, e.g., 5432.\n"
-    printf "  --postgres-host-port: The Postgres host port, e.g., 5432.\n"
-    printf "  --zookeeper-name: Zookeeper container name.\n"
-    printf "  --zookeeper-container-port: Zookeeper container port, e.g, 2181.\n"
-    printf "  --zookeeper-host-port: Zookeeper host port, e.g, 2181.\n"
+    printf "  --config | -c: Location of config file. If not specified, looks for MASTER_CONFIG env var.\n"
 }
 
 ###################################################
@@ -204,6 +179,7 @@ kafka_init() {
 
     printf "Waiting for Kafka initialization ..."
     kafka_up=0
+    srvr_response=""
     for ((i=0; i<100; i++))
     do
         srvr_response=$(echo "dump" | nc 127.0.0.1 "$ZOOKEEPER_HOST_PORT" | grep brokers)
@@ -374,8 +350,6 @@ zookeeper_init() {
 # MAIN                                            #
 ###################################################
 
-printf "Printing MY_ENV_VAR: %s\n" "$MY_ENV_VAR"
-
 ############ GET REFERENCE PATH ###################
 
 MY_PATH=$(dirname "$0")            # relative
@@ -384,172 +358,24 @@ if [[ -z "$MY_PATH" ]]
 then
   exit 1  # fail
 fi
+SRC_PATH="$(dirname "$MY_PATH")/src"
 
-############ SOURCE CONFIG FROM FILE ###################
-
-CONSUMER_CLIENT_ID=$(jq -r .CONSUMER_CLIENT_ID "$MY_PATH"/config.master)
-CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$MY_PATH"/config.master)
-DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MY_PATH"/config.master)
-HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE "$MY_PATH"/config.master)
-KAFKA_NAME=$(jq -r .KAFKA_NAME "$MY_PATH"/config.master)
-KAFKA_EXTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT "$MY_PATH"/config.master)
-KAFKA_EXTERNAL_HOST_PORT=$(jq -r .KAFKA_EXTERNAL_HOST_PORT "$MY_PATH"/config.master)
-KAFKA_INTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_INTERNAL_CONTAINER_PORT "$MY_PATH"/config.master)
-KAFKA_INTERNAL_HOST_PORT=$(jq -r .KAFKA_INTERNAL_HOST_PORT "$MY_PATH"/config.master)
-KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC "$MY_PATH"/config.master)
-POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$MY_PATH"/config.master)
-POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD "$MY_PATH"/config.master)
-POSTGRES_CONTAINER_PORT=$(jq -r .POSTGRES_CONTAINER_PORT "$MY_PATH"/config.master)
-POSTGRES_HOST_PORT=$(jq -r .POSTGRES_HOST_PORT "$MY_PATH"/config.master)
-POSTGRES_USER=$(jq -r .POSTGRES_USER "$MY_PATH"/config.master)
-PRODUCER_CLIENT_ID=$(jq -r .PRODUCER_CLIENT_ID "$MY_PATH"/config.master)
-PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$MY_PATH"/config.master)
-PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE "$MY_PATH"/config.master)
-PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER "$MY_PATH"/config.master)
-PRODUCER_CONTAINER_PORT=$(jq -r .PRODUCER_CONTAINER_PORT "$MY_PATH"/config.master)
-PRODUCER_HOST_PORT=$(jq -r .PRODUCER_HOST_PORT "$MY_PATH"/config.master)
-SEMVER_TAG=$(jq -r .SEMVER_TAG "$MY_PATH"/config.master)
+############# PARSE PARAMS ###################
 VERBOSITY=0
-ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME "$MY_PATH"/config.master)
-ZOOKEEPER_CONTAINER_PORT=$(jq -r .ZOOKEEPER_CONTAINER_PORT "$MY_PATH"/config.master)
-ZOOKEEPER_HOST_PORT=$(jq -r .ZOOKEEPER_HOST_PORT "$MY_PATH"/config.master)
-
-############ SOURCE UPDATED CONFIG FROM PARAMS ###################
-
 while (( "$#" )); do   # Evaluate length of param array and exit at zero
     case $1 in
         -h|--help)
         help;
         exit 0
         ;;
-        --consumer-client-id)
-        CONSUMER_CLIENT_ID="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --consumer-name)
-        CONSUMER_NAME="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --http-log-file)
-        HTTP_LOG_FILE="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --kafka-name)
-        KAFKA_NAME="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --kafka-internal-container-port)
-        KAFKA_INTERNAL_CONTAINER_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --kafka-internal-host-port)
-        KAFKA_INTERNAL_HOST_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --kafka-external-container-port)
-        KAFKA_EXTERNAL_CONTAINER_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --kafka-external-host-port)
-        KAFKA_EXTERNAL_HOST_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --kafka-topic)
-        KAFKA_TOPIC="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        -n|--network)
-        DOCKER_NETWORK="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --postgres-name)
-        POSTGRES_NAME="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --postgres-password)
-        POSTGRES_PASSWORD="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --postgres-container-port)
-        POSTGRES_CONTAINER_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --postgres-host-port)
-        POSTGRES_HOST_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --postgres-user)
-        POSTGRES_USER="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-client-id)
-        PRODUCER_CLIENT_ID="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-name)
-        PRODUCER_NAME="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-http-rule)
-        PRODUCER_HTTP_RULE="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-ingress)
-        PRODUCER_INGRESS_HTTP_LISTENER="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-container-port)
-        PRODUCER_CONTAINER_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --producer-host-port)
-        PRODUCER_HOST_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        -t|--tag)
-        SEMVER_TAG="$2"
+        --config|-c)
+        MASTER_CONFIG="$2"
         shift # past argument
         shift # past value
         ;;
         -v)
         VERBOSITY=1
         shift # past argument
-        ;;
-        --zookeeper-name)
-        ZOOKEEPER_NAME="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --zookeeper-container-port)
-        ZOOKEEPER_CONTAINER_PORT="$2"
-        shift # past argument
-        shift # past value
-        ;;
-        --zookeeper-host-port)
-        ZOOKEEPER_HOST_PORT="$2"
-        shift # past argument
-        shift # past value
         ;;
         -*)
         echo "Unknown option $1"
@@ -561,6 +387,34 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         ;;
     esac
 done
+
+############ LOAD CONFIG ###################
+
+CONSUMER_CLIENT_ID=$(jq -r .CONSUMER_CLIENT_ID "$MASTER_CONFIG")
+CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$MASTER_CONFIG")
+DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MASTER_CONFIG")
+HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE "$MASTER_CONFIG")
+KAFKA_NAME=$(jq -r .KAFKA_NAME "$MASTER_CONFIG")
+KAFKA_EXTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT "$MASTER_CONFIG")
+KAFKA_EXTERNAL_HOST_PORT=$(jq -r .KAFKA_EXTERNAL_HOST_PORT "$MASTER_CONFIG")
+KAFKA_INTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_INTERNAL_CONTAINER_PORT "$MASTER_CONFIG")
+KAFKA_INTERNAL_HOST_PORT=$(jq -r .KAFKA_INTERNAL_HOST_PORT "$MASTER_CONFIG")
+KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC "$MASTER_CONFIG")
+POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$MASTER_CONFIG")
+POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD "$MASTER_CONFIG")
+POSTGRES_CONTAINER_PORT=$(jq -r .POSTGRES_CONTAINER_PORT "$MASTER_CONFIG")
+POSTGRES_HOST_PORT=$(jq -r .POSTGRES_HOST_PORT "$MASTER_CONFIG")
+POSTGRES_USER=$(jq -r .POSTGRES_USER "$MASTER_CONFIG")
+PRODUCER_CLIENT_ID=$(jq -r .PRODUCER_CLIENT_ID "$MASTER_CONFIG")
+PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$MASTER_CONFIG")
+PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE "$MASTER_CONFIG")
+PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER "$MASTER_CONFIG")
+PRODUCER_CONTAINER_PORT=$(jq -r .PRODUCER_CONTAINER_PORT "$MASTER_CONFIG")
+PRODUCER_HOST_PORT=$(jq -r .PRODUCER_HOST_PORT "$MASTER_CONFIG")
+SEMVER_TAG=$(jq -r .SEMVER_TAG "$MASTER_CONFIG")
+ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME "$MASTER_CONFIG")
+ZOOKEEPER_CONTAINER_PORT=$(jq -r .ZOOKEEPER_CONTAINER_PORT "$MASTER_CONFIG")
+ZOOKEEPER_HOST_PORT=$(jq -r .ZOOKEEPER_HOST_PORT "$MASTER_CONFIG")
 
 if [[ $VERBOSITY == 1 ]]
 then
@@ -585,48 +439,18 @@ postgres_init
 ############  CONSUMER INIT ############
 if [[ $VERBOSITY == 1 ]]
 then
-    bash "$MY_PATH"/src/consumer/consumer_init.sh \
-    --tag "$SEMVER_TAG" \
-    --network "$DOCKER_NETWORK" \
-    --consumer-client-id "$CONSUMER_CLIENT_ID" \
-    --consumer-name "$CONSUMER_NAME" \
-    --kafka-name "$KAFKA_NAME" \
-    --kafka-port "$KAFKA_EXTERNAL_CONTAINER_PORT" \
-    --kafka-topic "$KAFKA_TOPIC" \
-    --postgres-name "$POSTGRES_NAME" \
-    --postgres-user "$POSTGRES_USER" \
-    --postgres-password "$POSTGRES_PASSWORD" \
-    --postgres-port "$POSTGRES_CONTAINER_PORT" \
+    bash "$SRC_PATH"/consumer/consumer_init.sh \
+    -c "$MASTER_CONFIG" \
     -v
 else
-    bash "$MY_PATH"/src/consumer/consumer_init.sh \
-    --tag "$SEMVER_TAG" \
-    --network "$DOCKER_NETWORK" \
-    --consumer-client-id "$CONSUMER_CLIENT_ID" \
-    --consumer-name "$CONSUMER_NAME" \
-    --kafka-name "$KAFKA_NAME" \
-    --kafka-port "$KAFKA_EXTERNAL_CONTAINER_PORT" \
-    --kafka-topic "$KAFKA_TOPIC" \
-    --postgres-name "$POSTGRES_NAME" \
-    --postgres-user "$POSTGRES_USER" \
-    --postgres-password "$POSTGRES_PASSWORD" \
-    --postgres-port "$POSTGRES_CONTAINER_PORT"
+    bash "$SRC_PATH"/consumer/consumer_init.sh \
+    -c "$MASTER_CONFIG"
 fi
 
 ############  PRODUCER INIT ############
 printf "Waiting for KafkaProducer initialization ..."
-http_server_ip=$(bash "$MY_PATH"/src/producer/producer_init.sh \
---tag "$SEMVER_TAG" \
---network "$DOCKER_NETWORK" \
---kafka-name "$KAFKA_NAME" \
---kafka-port "$KAFKA_EXTERNAL_CONTAINER_PORT" \
---kafka-topic "$KAFKA_TOPIC" \
---producer-client-id "$PRODUCER_CLIENT_ID" \
---producer-name "$PRODUCER_NAME" \
---producer-http-rule "$PRODUCER_HTTP_RULE" \
---producer-ingress "$PRODUCER_INGRESS_HTTP_LISTENER" \
---producer-container-port "$PRODUCER_CONTAINER_PORT" \
---producer-host-port "$PRODUCER_HOST_PORT" | tail -1)
+http_server_ip=$(bash "$SRC_PATH"/producer/producer_init.sh \
+-c "$MASTER_CONFIG" | tail -1)
 printf "Done.\n"
 dir=$(dirname "$HTTP_LOG_FILE")
 mkdir -p "$dir"
