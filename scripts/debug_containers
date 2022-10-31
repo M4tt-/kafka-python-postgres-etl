@@ -18,6 +18,7 @@ sudo docker run -p 29092:29092 \
 -p 9092:9092 --name kafka-broker \
 --network av_telemetry \
 --restart unless-stopped \
+-e KAFKA_BROKER_ID=1 \
 -e ALLOW_PLAINTEXT_LISTENER=yes \
 -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
 -e KAFKA_LISTENERS=PLAINTEXT://kafka-broker:9092,PLAINTEXT_HOST://localhost:29092 \

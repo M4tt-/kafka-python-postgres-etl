@@ -65,7 +65,7 @@ done
 
 CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$MASTER_CONFIG")
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MASTER_CONFIG")
-KAFKA_NAME=$(jq -r .KAFKA_NAME "$MASTER_CONFIG")
+KAFKA_BROKER_NAME=$(jq -r .KAFKA_BROKER_NAME "$MASTER_CONFIG")
 POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$MASTER_CONFIG")
 PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$MASTER_CONFIG")
 ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME "$MASTER_CONFIG")
@@ -102,11 +102,11 @@ then
 fi
 
 ############  KAFKA TEARDOWN ############
-if [[ "$container_names" == *"$KAFKA_NAME"* ]]
+if [[ "$container_names" == *"$KAFKA_BROKER_NAME"* ]]
 then
-    printf "Stopping %s ..." "$KAFKA_NAME"
-    sudo docker stop "$KAFKA_NAME">/dev/null
-    sudo docker rm "$KAFKA_NAME">/dev/null
+    printf "Stopping %s ..." "$KAFKA_BROKER_NAME"
+    sudo docker stop "$KAFKA_BROKER_NAME">/dev/null
+    sudo docker rm "$KAFKA_BROKER_NAME">/dev/null
     printf "Done.\n\n"
 fi
 

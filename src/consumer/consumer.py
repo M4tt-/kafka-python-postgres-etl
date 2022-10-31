@@ -47,7 +47,7 @@ class Consumer(KafkaConsumer):
             None.
         """
 
-        kafka_name = os.environ.get('KAFKA_NAME')
+        kafka_name = os.environ.get('KAFKA_BROKER_NAME')
         kafka_port = os.environ.get('KAFKA_PORT')
         kafka_server = f"{kafka_name}:{kafka_port}"
         self.consumer_kwargs = {}

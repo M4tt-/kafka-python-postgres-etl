@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.5] - 2022-??-??
+
+TL;DR: Revised for multi-node Kafka cluster.
+
+### Added
+
+
+### Changed
+
+- Changed config.master.KAFKA_NAME to KAFKA_BROKER_NAME
+- Added KAFKA_BROKER_ID env var to bitnami/kafka container init.
+
+### Deprecated
+
+
+### Removed
+
+
+
 ## [0.0.4] - 2022-10-31
 
 TL;DR: Reorganized folder structure, revised command line options.

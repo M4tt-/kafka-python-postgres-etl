@@ -46,7 +46,8 @@ dump_config() {
     printf "CONSUMER_NAME: %s\n" "$CONSUMER_NAME"
     printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
     printf "HTTP_LOG_FILE: %s\n" "$HTTP_LOG_FILE"
-    printf "KAFKA_NAME: %s\n" "$KAFKA_NAME"
+    printf "KAFKA_BROKER_NAME: %s\n" "$KAFKA_BROKER_NAME"
+    printf "KAFKA_BROKER_ID: %s\n" "$KAFKA_BROKER_ID"
     printf "KAFKA_EXTERNAL_CONTAINER_PORT: %s\n" "$KAFKA_EXTERNAL_CONTAINER_PORT"
     printf "KAFKA_EXTERNAL_HOST_PORT: %s\n" "$KAFKA_EXTERNAL_HOST_PORT"
     printf "KAFKA_INTERNAL_CONTAINER_PORT: %s\n" "$KAFKA_INTERNAL_CONTAINER_PORT"
@@ -132,22 +133,22 @@ get_container_names() {
 
 kafka_init() {
 
-    if [[ "$container_names" == *"$KAFKA_NAME"* ]]
+    if [[ "$container_names" == *"$KAFKA_BROKER_NAME"* ]]
     then
 
         if [[ "$VERBOSITY" == 1 ]]
         then
-            printf "%s container already exists -- re-creating!\n" "$KAFKA_NAME"
+            printf "%s container already exists -- re-creating!\n" "$KAFKA_BROKER_NAME"
         fi
 
         # Stop and remove Kafka container
         if [[ "$VERBOSITY" == 1 ]]
         then
-            sudo docker stop "$KAFKA_NAME"
-            sudo docker rm "$KAFKA_NAME"
+            sudo docker stop "$KAFKA_BROKER_NAME"
+            sudo docker rm "$KAFKA_BROKER_NAME"
         else
-            sudo docker stop "$KAFKA_NAME">/dev/null
-            sudo docker rm "$KAFKA_NAME">/dev/null
+            sudo docker stop "$KAFKA_BROKER_NAME">/dev/null
+            sudo docker rm "$KAFKA_BROKER_NAME">/dev/null
         fi
     fi
 
@@ -155,24 +156,26 @@ kafka_init() {
     if [[ "$VERBOSITY" == 1 ]]
     then
         sudo docker run -p "${KAFKA_INTERNAL_HOST_PORT}":"${KAFKA_INTERNAL_CONTAINER_PORT}" \
-        -p "${KAFKA_EXTERNAL_HOST_PORT}":"${KAFKA_EXTERNAL_CONTAINER_PORT}" --name "$KAFKA_NAME" \
+        -p "${KAFKA_EXTERNAL_HOST_PORT}":"${KAFKA_EXTERNAL_CONTAINER_PORT}" --name "$KAFKA_BROKER_NAME" \
         --network "$DOCKER_NETWORK" \
         --restart unless-stopped \
+        -e KAFKA_BROKER_ID="${KAFKA_BROKER_ID}" \
         -e ALLOW_PLAINTEXT_LISTENER=yes \
         -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
-        -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
-        -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+        -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_BROKER_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+        -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_BROKER_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
         -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${ZOOKEEPER_CONTAINER_PORT}" \
         -d bitnami/kafka:3.3.1
     else
         sudo docker run -p "${KAFKA_INTERNAL_HOST_PORT}":"${KAFKA_INTERNAL_CONTAINER_PORT}" \
-        -p "${KAFKA_EXTERNAL_HOST_PORT}":"${KAFKA_EXTERNAL_CONTAINER_PORT}" --name "$KAFKA_NAME" \
+        -p "${KAFKA_EXTERNAL_HOST_PORT}":"${KAFKA_EXTERNAL_CONTAINER_PORT}" --name "$KAFKA_BROKER_NAME" \
         --network "$DOCKER_NETWORK" \
         --restart unless-stopped \
+        -e KAFKA_BROKER_ID="${KAFKA_BROKER_ID}" \
         -e ALLOW_PLAINTEXT_LISTENER=yes \
         -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
-        -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
-        -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+        -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_BROKER_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+        -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_BROKER_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
         -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${ZOOKEEPER_CONTAINER_PORT}" \
         -d bitnami/kafka:3.3.1 >/dev/null
     fi
@@ -202,7 +205,7 @@ kafka_init() {
     then
         printf "Getting existing Kafka topics ..."
     fi
-    kafka_topics=$(sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$KAFKA_INTERNAL_CONTAINER_PORT --list && exit")
+    kafka_topics=$(sudo docker exec -it "$KAFKA_BROKER_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$KAFKA_INTERNAL_CONTAINER_PORT --list && exit")
     if [[ "$VERBOSITY" == 1 ]]
     then
         printf "Done.\n"
@@ -213,10 +216,10 @@ kafka_init() {
         if [[ "$VERBOSITY" == 1 ]]
         then
             printf "Creating the Kafka topic %s ..." "$KAFKA_TOPIC"
-            sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$KAFKA_INTERNAL_CONTAINER_PORT --create --topic $KAFKA_TOPIC && exit"
+            sudo docker exec -it "$KAFKA_BROKER_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$KAFKA_INTERNAL_CONTAINER_PORT --create --topic $KAFKA_TOPIC && exit"
             printf "Done.\n"
         else
-            sudo docker exec -it "$KAFKA_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$KAFKA_INTERNAL_CONTAINER_PORT --create --topic $KAFKA_TOPIC && exit" >/dev/null
+            sudo docker exec -it "$KAFKA_BROKER_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$KAFKA_INTERNAL_CONTAINER_PORT --create --topic $KAFKA_TOPIC && exit" >/dev/null
         fi
 
     else
@@ -394,7 +397,8 @@ CONSUMER_CLIENT_ID=$(jq -r .CONSUMER_CLIENT_ID "$MASTER_CONFIG")
 CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$MASTER_CONFIG")
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MASTER_CONFIG")
 HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE "$MASTER_CONFIG")
-KAFKA_NAME=$(jq -r .KAFKA_NAME "$MASTER_CONFIG")
+KAFKA_BROKER_NAME=$(jq -r .KAFKA_BROKER_NAME "$MASTER_CONFIG")
+KAFKA_BROKER_ID=$(jq -r .KAFKA_BROKER_ID "$MASTER_CONFIG")
 KAFKA_EXTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT "$MASTER_CONFIG")
 KAFKA_EXTERNAL_HOST_PORT=$(jq -r .KAFKA_EXTERNAL_HOST_PORT "$MASTER_CONFIG")
 KAFKA_INTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_INTERNAL_CONTAINER_PORT "$MASTER_CONFIG")
