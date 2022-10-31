@@ -43,11 +43,11 @@ A dichotomy can be made of this project's components: server infrastructure (or 
 
 The server infrastructure has one or more of the following containers:
 
-- [_/postgres](https://hub.docker.com/_/postgres) -- PostgreSQL data store (official image)
+- [_/postgres:15.0](https://hub.docker.com/_/postgres) -- PostgreSQL data store (official image)
 - [m4ttl33t/consumer](https://hub.docker.com/r/m4ttl33t/consumer) -- Kafka Consumer / SQL writer
 - [m4ttl33t/producer](https://hub.docker.com/r/m4ttl33t/producer)-- Kafka Producer / HTTP server
-- [bitnami/kafka:latest](https://hub.docker.com/r/bitnami/kafka) -- Kafka broker(s)
-- [bitnami/zookeeper:latest](https://hub.docker.com/r/bitnami/zookeeper) -- Zookeeper to administrate Kafka brokers
+- [bitnami/kafka:3.3.1](https://hub.docker.com/r/bitnami/kafka) -- Kafka broker(s)
+- [bitnami/zookeeper:3.7.1](https://hub.docker.com/r/bitnami/zookeeper) -- Zookeeper to administrate Kafka brokers
 
 As of this revision, this infrastructure is "single-node" and operates locally for demonstration purposes. Each container
 communicates over a Docker bridge network.
@@ -101,7 +101,6 @@ the .pylintrc at repo root:
 This project is done all on my own time outside of work hours, so it's not where I want it to be (but it will be one day soon!).
 Near-future changes to come:
 
-- Enhance the CaC
 - Further test multi-Producer setup with Load Balancer
 - Further test multi-node Kafka cluster
 - Add web-based visualizations for streaming data
