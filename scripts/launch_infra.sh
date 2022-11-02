@@ -41,9 +41,10 @@ help() {
 
 dump_config() {
 
-    printf "\nSourced configuration (master):\n\n"
+    printf "\nSourced configuration (%s):\n\n" "$MASTER_CONFIG"
     printf "CONSUMER_CLIENT_ID: %s\n" "$CONSUMER_CLIENT_ID"
     printf "CONSUMER_NAME: %s\n" "$CONSUMER_NAME"
+    printf "CONSUMER_GROUP: %s\n" "$CONSUMER_GROUP"
     printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
     printf "HTTP_LOG_FILE: %s\n" "$HTTP_LOG_FILE"
     printf "KAFKA_BROKER_NAME: %s\n" "$KAFKA_BROKER_NAME"
@@ -53,6 +54,7 @@ dump_config() {
     printf "KAFKA_INTERNAL_CONTAINER_PORT: %s\n" "$KAFKA_INTERNAL_CONTAINER_PORT"
     printf "KAFKA_INTERNAL_HOST_PORT: %s\n" "$KAFKA_INTERNAL_HOST_PORT"
     printf "KAFKA_TOPIC: %s\n" "$KAFKA_TOPIC"
+    printf "KAFKA_TOPIC_PARTITIONS: %s\n" "$KAFKA_TOPIC_PARTITIONS"
     printf "POSTGRES_NAME: %s\n" "$POSTGRES_NAME"
     printf "POSTGRES_PASSWORD: %s\n" "$POSTGRES_PASSWORD"
     printf "POSTGRES_CONTAINER_PORT: %s\n" "$POSTGRES_CONTAINER_PORT"
@@ -60,6 +62,7 @@ dump_config() {
     printf "POSTGRES_USER: %s\n" "$POSTGRES_USER"
     printf "PRODUCER_CLIENT_ID: %s\n" "$PRODUCER_CLIENT_ID"
     printf "PRODUCER_NAME: %s\n" "$PRODUCER_NAME"
+    printf "PRODUCER_MESSAGE_KEY: %s\n" "$PRODUCER_MESSAGE_KEY"
     printf "PRODUCER_HTTP_RULE: %s\n" "$PRODUCER_HTTP_RULE"
     printf "PRODUCER_INGRESS_HTTP_LISTENER: %s\n" "$PRODUCER_INGRESS_HTTP_LISTENER"
     printf "PRODUCER_CONTAINER_PORT: %s\n" "$PRODUCER_CONTAINER_PORT"
@@ -164,6 +167,7 @@ kafka_init() {
         -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
         -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_BROKER_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
         -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_BROKER_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+        -e KAFKA_CFG_NUM_PARTITIONS="${KAFKA_TOPIC_PARTITIONS}" \
         -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${ZOOKEEPER_CONTAINER_PORT}" \
         -d bitnami/kafka:3.3.1
     else
@@ -176,6 +180,7 @@ kafka_init() {
         -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
         -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_BROKER_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
         -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_BROKER_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+        -e KAFKA_CFG_NUM_PARTITIONS="${KAFKA_TOPIC_PARTITIONS}" \
         -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${ZOOKEEPER_CONTAINER_PORT}" \
         -d bitnami/kafka:3.3.1 >/dev/null
     fi
@@ -266,7 +271,7 @@ postgres_init() {
         -e POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
         -e POSTGRES_USER="${POSTGRES_USER}" \
         -e PGPORT="${POSTGRES_CONTAINER_PORT}" \
-        -v "$MY_PATH"/src/db:/docker-entrypoint-initdb.d \
+        -v "$SRC_PATH"/db:/docker-entrypoint-initdb.d \
         -d postgres:15.0
     else
         sudo docker run -p "${POSTGRES_HOST_PORT}":"${POSTGRES_CONTAINER_PORT}" \
@@ -276,7 +281,7 @@ postgres_init() {
         -e POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
         -e POSTGRES_USER="${POSTGRES_USER}" \
         -e PGPORT="${POSTGRES_CONTAINER_PORT}" \
-        -v "$MY_PATH"/src/db:/docker-entrypoint-initdb.d \
+        -v "$SRC_PATH"/db:/docker-entrypoint-initdb.d \
         -d postgres:15.0>/dev/null
     fi
 
@@ -349,11 +354,11 @@ zookeeper_init() {
     printf "Done.\n"
 }
 
-###################################################
-# MAIN                                            #
-###################################################
+##################################################
+#   MAIN                                         #
+##################################################
 
-############ GET REFERENCE PATH ###################
+########### GET REFERENCE PATH ###################
 
 MY_PATH=$(dirname "$0")            # relative
 MY_PATH=$(cd "$MY_PATH" && pwd)    # absolutized and normalized
@@ -395,6 +400,7 @@ done
 
 CONSUMER_CLIENT_ID=$(jq -r .CONSUMER_CLIENT_ID "$MASTER_CONFIG")
 CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$MASTER_CONFIG")
+CONSUMER_GROUP=$(jq -r .CONSUMER_GROUP "$MASTER_CONFIG")
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MASTER_CONFIG")
 HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE "$MASTER_CONFIG")
 KAFKA_BROKER_NAME=$(jq -r .KAFKA_BROKER_NAME "$MASTER_CONFIG")
@@ -404,12 +410,14 @@ KAFKA_EXTERNAL_HOST_PORT=$(jq -r .KAFKA_EXTERNAL_HOST_PORT "$MASTER_CONFIG")
 KAFKA_INTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_INTERNAL_CONTAINER_PORT "$MASTER_CONFIG")
 KAFKA_INTERNAL_HOST_PORT=$(jq -r .KAFKA_INTERNAL_HOST_PORT "$MASTER_CONFIG")
 KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC "$MASTER_CONFIG")
+KAFKA_TOPIC_PARTITIONS=$(jq -r .KAFKA_TOPIC_PARTITIONS "$MASTER_CONFIG")
 POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$MASTER_CONFIG")
 POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD "$MASTER_CONFIG")
 POSTGRES_CONTAINER_PORT=$(jq -r .POSTGRES_CONTAINER_PORT "$MASTER_CONFIG")
 POSTGRES_HOST_PORT=$(jq -r .POSTGRES_HOST_PORT "$MASTER_CONFIG")
 POSTGRES_USER=$(jq -r .POSTGRES_USER "$MASTER_CONFIG")
 PRODUCER_CLIENT_ID=$(jq -r .PRODUCER_CLIENT_ID "$MASTER_CONFIG")
+PRODUCER_MESSAGE_KEY=$(jq -r .PRODUCER_MESSAGE_KEY "$MASTER_CONFIG")
 PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$MASTER_CONFIG")
 PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE "$MASTER_CONFIG")
 PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER "$MASTER_CONFIG")
@@ -451,7 +459,7 @@ else
     -c "$MASTER_CONFIG"
 fi
 
-############  PRODUCER INIT ############
+###########  PRODUCER INIT ############
 printf "Waiting for KafkaProducer initialization ..."
 http_server_ip=$(bash "$SRC_PATH"/producer/producer_init.sh \
 -c "$MASTER_CONFIG" | tail -1)

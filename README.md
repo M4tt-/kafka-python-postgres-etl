@@ -23,15 +23,15 @@ Ensure a Docker daemon is running and there are no services occupying the `XXX_H
 
 Pull the master branch and navigate to repo root. Execute:
 
-    $bash launch_infra.sh
-    $bash launch_fleet.sh [--num-vehicles <N>]
+    $bash launch_infra.sh -c /path/to/config/config.master
+    $bash launch_fleet.sh -c /path/to/config/config.master [--num-vehicles <N>]
 
 >Can use -v flag for verbosity -- see the help menu(s)
 
 When you're finished, you can similarly tear down the containers:
 
     $bash teardown_fleet.sh
-    $bash teardown_infra.sh
+    $bash teardown_infra.sh -c /path/to/config/config.master
 
 ## Architecture
 

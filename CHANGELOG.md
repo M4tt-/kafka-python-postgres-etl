@@ -11,11 +11,19 @@ TL;DR: Revised for multi-node Kafka cluster.
 
 ### Added
 
+- TODO: Added -v argument to `teardown_XXXXX.sh` scripts for consistency with other scripts
 
 ### Changed
 
 - Changed config.master.KAFKA_NAME to KAFKA_BROKER_NAME
 - Added KAFKA_BROKER_ID env var to bitnami/kafka container init.
+- Added KAFKA_TOPIC_PARTITIONS env var to bitnami/kafka container init to set num partitions on each topic.
+- Added PRODUCER_MESSAGE_KEY env var and modified producer.Producer.publish_event() to force each Producer to write to only one partition
+- Added CONSUMER_GROUP to config.master and modified consumer.Consumer to subscribe to a consumer group.
+- Updated README.md
+
+TRY TWO CONSUMERS NEXT!
+
 
 ### Deprecated
 

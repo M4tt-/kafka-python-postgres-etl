@@ -181,7 +181,7 @@ do
         -e VEHICLE_VELOCITY_X="$VEHICLE_VELOCITY_X" \
         -e VEHICLE_VELOCITY_Y="$VEHICLE_VELOCITY_Y" \
         -e VEHICLE_VELOCITY_Z="$VEHICLE_VELOCITY_Z" \
-        -d m4ttl33t/vehicle:"${SEMVER_TAG}"
+        m4ttl33t/vehicle:"${SEMVER_TAG}"
     else
         sudo docker run --name "${container_name}" \
         --network "${DOCKER_NETWORK}" \
@@ -193,7 +193,7 @@ do
         -e VEHICLE_VELOCITY_X="$VEHICLE_VELOCITY_X" \
         -e VEHICLE_VELOCITY_Y="$VEHICLE_VELOCITY_Y" \
         -e VEHICLE_VELOCITY_Z="$VEHICLE_VELOCITY_Z" \
-        -d m4ttl33t/vehicle:"${SEMVER_TAG}" > /dev/null
+        m4ttl33t/vehicle:"${SEMVER_TAG}" > /dev/null
     fi
     printf "  Done.\n"
 done

@@ -30,15 +30,24 @@ bitnami/kafka:3.3.1
 
 # List Topics
 sudo docker exec -it kafka-broker bash
-cd opt/bitnami/kafka/bin
+cd /opt/bitnami/kafka/bin
 kafka-topics.sh --bootstrap-server localhost:29092 --list
 # kafka-topics.sh --bootstrap-server localhost:29092 --create --topic test_topic
+# kafka-topics.sh --bootstrap-server localhost:29092 --create --topic test_topic2 --partitions 3
 
 # Produce a message via console
-kafka-console-producer.sh --bootstrap-server localhost:29092 --topic test_topic
+kafka-console-producer.sh --bootstrap-server localhost:29092 --topic test_topic2
+kafka-console-producer.sh --bootstrap-server localhost:29092 --topic test_topic2 --property parse.key=true --property key.separator=:
+    # messages with the same key will be published to the same partition
+
+# Consume a message via console
+kafka-console-consumer.sh --bootstrap-server localhost:29092 --topic test_topic --group my_group
 
 # List consumer groups
 kafka-consumer-groups.sh --list --bootstrap-server localhost:29092
+
+# Inspect logs
+cd /bitnami/kafka/data
 
 # Postgres container
 sudo docker run -p 5432:5432 \
@@ -67,7 +76,7 @@ sudo docker run -p 5431:5431 \
 postgres
 
 # inspect the database
-psql -h localhost -p 5432 -U postgres
+psql -h localhost -p 54321 -U postgres
 \c av_telemetry
 SELECT * from diag;
 

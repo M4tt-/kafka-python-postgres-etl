@@ -37,6 +37,7 @@ dump_config() {
 
     printf "\nSourced configuration (%s):\n\n" "$CONSUMER_CONFIG"
     printf "CONSUMER_CLIENT_ID: %s\n" "$CONSUMER_CLIENT_ID"
+    printf "CONSUMER_GROUP: %s\n" "$CONSUMER_GROUP"
     printf "CONSUMER_NAME: %s\n" "$CONSUMER_NAME"
     printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
     printf "KAFKA_BROKER_NAME: %s\n" "$KAFKA_BROKER_NAME"
@@ -95,6 +96,7 @@ done
 ############ LOAD CONFIG ###################
 
 CONSUMER_CLIENT_ID=$(jq -r .CONSUMER_CLIENT_ID "$CONSUMER_CONFIG")
+CONSUMER_GROUP=$(jq -r .CONSUMER_GROUP "$CONSUMER_CONFIG")
 CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$CONSUMER_CONFIG")
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$CONSUMER_CONFIG")
 KAFKA_BROKER_NAME=$(jq -r .KAFKA_BROKER_NAME "$CONSUMER_CONFIG")
@@ -136,6 +138,7 @@ then
     --network "${DOCKER_NETWORK}" \
     -e PYTHONUNBUFFERED=1 \
     -e CONSUMER_CLIENT_ID="$CONSUMER_CLIENT_ID" \
+    -e CONSUMER_GROUP="$CONSUMER_GROUP" \
     -e KAFKA_BROKER_NAME="$KAFKA_BROKER_NAME" \
     -e KAFKA_PORT="$KAFKA_PORT" \
     -e KAFKA_TOPIC="$KAFKA_TOPIC" \
@@ -145,12 +148,13 @@ then
     -e POSTGRES_PORT="$POSTGRES_PORT" \
     -e POSTGRES_DB=av_telemetry \
     -e POSTGRES_TABLE=diag \
-    -d m4ttl33t/consumer:"${SEMVER_TAG}"
+    m4ttl33t/consumer:"${SEMVER_TAG}"
 else
     sudo docker run --name "${CONSUMER_NAME}" \
     --network "${DOCKER_NETWORK}" \
     -e PYTHONUNBUFFERED=1 \
     -e CONSUMER_CLIENT_ID="$CONSUMER_CLIENT_ID" \
+    -e CONSUMER_GROUP="$CONSUMER_GROUP" \
     -e KAFKA_BROKER_NAME="$KAFKA_BROKER_NAME" \
     -e KAFKA_PORT="$KAFKA_PORT" \
     -e KAFKA_TOPIC="$KAFKA_TOPIC" \
@@ -160,7 +164,7 @@ else
     -e POSTGRES_PORT="$POSTGRES_PORT" \
     -e POSTGRES_DB=av_telemetry \
     -e POSTGRES_TABLE=diag \
-    -d m4ttl33t/consumer:"${SEMVER_TAG}" >/dev/null
+    m4ttl33t/consumer:"${SEMVER_TAG}" >/dev/null
 fi
 
 printf "Waiting for KafkaConsumer initialization ..."
