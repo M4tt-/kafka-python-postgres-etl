@@ -19,7 +19,7 @@
 
 # Usage: see teardown_infra.sh --help
 
-set -euo pipefail
+#set -euo pipefail
 
 ###################################################
 # FUNCTION: HELP MENU                             #
@@ -79,13 +79,17 @@ ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME "$MASTER_CONFIG")
 container_names=$(sudo docker ps -a --format "{{.Names}}")
 
 ############  CONSUMER TEARDOWN ############
-if [[ "$container_names" == *"$CONSUMER_NAME"* ]]
-then
-    printf "Stopping %s ..." "$CONSUMER_NAME"
-    sudo docker stop "$CONSUMER_NAME">/dev/null
-    sudo docker rm "$CONSUMER_NAME">/dev/null
-    printf "Done.\n\n"
-fi
+consumer_names=$(sudo docker ps -a --format "{{.Names}}" | grep -e "${CONSUMER_NAME}[0-9]\+")
+for consumer_name in $consumer_names
+do
+    if [[ "$container_names" == *"$consumer_name"* ]]
+    then
+        printf "Stopping %s ..." "$consumer_name"
+        sudo docker stop "$consumer_name">/dev/null
+        sudo docker rm "$consumer_name">/dev/null
+        printf "Done.\n\n"
+    fi
+done
 
 ############  PRODUCER TEARDOWN ############
 if [[ "$container_names" == *"$PRODUCER_NAME"* ]]
@@ -106,22 +110,26 @@ then
 fi
 
 ############  KAFKA TEARDOWN ############
-if [[ "$container_names" == *"$KAFKA_BROKER_NAME"* ]]
-then
-    printf "Stopping %s ..." "$KAFKA_BROKER_NAME"
-    sudo docker stop "$KAFKA_BROKER_NAME">/dev/null
-    sudo docker rm "$KAFKA_BROKER_NAME">/dev/null
-    printf "Done.\n\n"
-fi
+broker_names=$(sudo docker ps -a --format "{{.Names}}" | grep -e "${KAFKA_BROKER_NAME}[0-9]\+")
+
+for broker in $broker_names
+do
+    printf "Tearing down %s ..." "$broker"
+    sudo docker stop "$broker" > /dev/null
+    sudo docker rm "$broker" > /dev/null
+    printf "Done.\n"
+done
 
 ############ ZOOKEEPER TEARDOWN ############
-if [[ "$container_names" == *"$ZOOKEEPER_NAME"* ]]
-then
-    printf "Stopping %s ..." "$ZOOKEEPER_NAME"
-    sudo docker stop "$ZOOKEEPER_NAME">/dev/null
-    sudo docker rm "$ZOOKEEPER_NAME">/dev/null
-    printf "Done.\n\n"
-fi
+zookeeper_names=$(sudo docker ps -a --format "{{.Names}}" | grep -e "${ZOOKEEPER_NAME}[0-9]\+")
+
+for zookeeper in $zookeeper_names
+do
+    printf "Tearing down %s ..." "$zookeeper"
+    sudo docker stop "$zookeeper" > /dev/null
+    sudo docker rm "$zookeeper" > /dev/null
+    printf "Done.\n"
+done
 
 ############ DOCKER NETWORK ############
 docker_networks=$(sudo docker network ls --format "{{.Name}}")

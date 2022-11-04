@@ -37,10 +37,13 @@ dump_config() {
 
     printf "\nSourced configuration (%s):\n\n" "$CONSUMER_CONFIG"
     printf "CONSUMER_CLIENT_ID: %s\n" "$CONSUMER_CLIENT_ID"
+    printf "CONSUMER_CLIENT_ID_SEED: %s\n" "$CONSUMER_CLIENT_ID_SEED"
     printf "CONSUMER_GROUP: %s\n" "$CONSUMER_GROUP"
     printf "CONSUMER_NAME: %s\n" "$CONSUMER_NAME"
+    printf "CONSUMER_NUM_INSTANCES: %s\n" "$CONSUMER_NUM_INSTANCES"
     printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
     printf "KAFKA_BROKER_NAME: %s\n" "$KAFKA_BROKER_NAME"
+    printf "KAFKA_BROKER_ID_SEEDE: %s\n" "$KAFKA_BROKER_ID_SEED"
     printf "KAFKA_PORT: %s\n" "$KAFKA_PORT"
     printf "KAFKA_TOPIC: %s\n" "$KAFKA_TOPIC"
     printf "POSTGRES_NAME: %s\n" "$POSTGRES_NAME"
@@ -96,10 +99,13 @@ done
 ############ LOAD CONFIG ###################
 
 CONSUMER_CLIENT_ID=$(jq -r .CONSUMER_CLIENT_ID "$CONSUMER_CONFIG")
+CONSUMER_CLIENT_ID_SEED=$(jq -r .CONSUMER_CLIENT_ID_SEED "$CONSUMER_CONFIG")
 CONSUMER_GROUP=$(jq -r .CONSUMER_GROUP "$CONSUMER_CONFIG")
 CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$CONSUMER_CONFIG")
+CONSUMER_NUM_INSTANCES=$(jq -r .CONSUMER_NUM_INSTANCES "$CONSUMER_CONFIG")
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$CONSUMER_CONFIG")
 KAFKA_BROKER_NAME=$(jq -r .KAFKA_BROKER_NAME "$CONSUMER_CONFIG")
+KAFKA_BROKER_ID_SEED=$(jq -r .KAFKA_BROKER_ID_SEED "$CONSUMER_CONFIG")
 KAFKA_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT "$CONSUMER_CONFIG")
 KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC "$CONSUMER_CONFIG")
 POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$CONSUMER_CONFIG")
@@ -113,68 +119,90 @@ then
     dump_config
 fi
 
+########### SANITIZE INPUT ###################
+if [[ CONSUMER_NUM_INSTANCES -lt 1 ]]
+then
+    printf "CONSUMER_NUM_INSTANCES cannot be < 1. CONSUMER_NUM_INSTANCES=%s\nExiting ...\n" "$CONSUMER_NUM_INSTANCES"
+    exit 1
+fi
+
 ############ DOCKER CONTAINERS: GET ############
 
 get_container_names
 
 ############  CONSUMER INIT ############
-if [[ "$container_names" == *"$CONSUMER_NAME"* ]]
-then
 
+printf "Waiting for KafkaConsumer initialization ...\n"
+for (( i="$CONSUMER_CLIENT_ID_SEED"; i<=CONSUMER_NUM_INSTANCES; i++ ))
+do
+
+    # Check that any similarly named containers do not exist
+    consumer_container_name="$CONSUMER_NAME$i"
+    if [[ "$container_names" == *"$consumer_container_name"* ]]
+    then
+
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            printf "%s container already exists -- re-creating!\n" "$consumer_container_name"
+            sudo docker stop "$consumer_container_name"
+            sudo docker rm "$consumer_container_name"
+        else
+            sudo docker stop "$consumer_container_name">/dev/null
+            sudo docker rm "$consumer_container_name">/dev/null
+        fi
+    fi
+
+    # Run the consumer container
     if [[ "$VERBOSITY" == 1 ]]
     then
-        printf "%s container already exists -- re-creating!\n" "$CONSUMER_NAME"
-        sudo docker stop "$CONSUMER_NAME"
-        sudo docker rm "$CONSUMER_NAME"
+        sudo docker run --name "${consumer_container_name}" \
+        --network "${DOCKER_NETWORK}" \
+        -e PYTHONUNBUFFERED=1 \
+        -e CONSUMER_CLIENT_ID="$CONSUMER_CLIENT_ID" \
+        -e CONSUMER_GROUP="$CONSUMER_GROUP" \
+        -e KAFKA_BROKER_ID_SEED="$KAFKA_BROKER_ID_SEED" \
+        -e KAFKA_BROKER_NAME="$KAFKA_BROKER_NAME" \
+        -e KAFKA_PORT="$KAFKA_PORT" \
+        -e KAFKA_TOPIC="$KAFKA_TOPIC" \
+        -e POSTGRES_NAME="$POSTGRES_NAME" \
+        -e POSTGRES_USER="$POSTGRES_USER" \
+        -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+        -e POSTGRES_PORT="$POSTGRES_PORT" \
+        -e POSTGRES_DB=av_telemetry \
+        -e POSTGRES_TABLE=diag \
+        -d m4ttl33t/consumer:"${SEMVER_TAG}"
     else
-        sudo docker stop "$CONSUMER_NAME">/dev/null
-        sudo docker rm "$CONSUMER_NAME">/dev/null
+        sudo docker run --name "${consumer_container_name}" \
+        --network "${DOCKER_NETWORK}" \
+        -e PYTHONUNBUFFERED=1 \
+        -e CONSUMER_CLIENT_ID="$CONSUMER_CLIENT_ID" \
+        -e CONSUMER_GROUP="$CONSUMER_GROUP" \
+        -e KAFKA_BROKER_ID_SEED="$KAFKA_BROKER_ID_SEED" \
+        -e KAFKA_BROKER_NAME="$KAFKA_BROKER_NAME" \
+        -e KAFKA_PORT="$KAFKA_PORT" \
+        -e KAFKA_TOPIC="$KAFKA_TOPIC" \
+        -e POSTGRES_NAME="$POSTGRES_NAME" \
+        -e POSTGRES_USER="$POSTGRES_USER" \
+        -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+        -e POSTGRES_PORT="$POSTGRES_PORT" \
+        -e POSTGRES_DB=av_telemetry \
+        -e POSTGRES_TABLE=diag \
+        -d m4ttl33t/consumer:"${SEMVER_TAG}" >/dev/null
     fi
-fi
 
-if [[ "$VERBOSITY" == 1 ]]
-then
-    sudo docker run --name "${CONSUMER_NAME}" \
-    --network "${DOCKER_NETWORK}" \
-    -e PYTHONUNBUFFERED=1 \
-    -e CONSUMER_CLIENT_ID="$CONSUMER_CLIENT_ID" \
-    -e CONSUMER_GROUP="$CONSUMER_GROUP" \
-    -e KAFKA_BROKER_NAME="$KAFKA_BROKER_NAME" \
-    -e KAFKA_PORT="$KAFKA_PORT" \
-    -e KAFKA_TOPIC="$KAFKA_TOPIC" \
-    -e POSTGRES_NAME="$POSTGRES_NAME" \
-    -e POSTGRES_USER="$POSTGRES_USER" \
-    -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-    -e POSTGRES_PORT="$POSTGRES_PORT" \
-    -e POSTGRES_DB=av_telemetry \
-    -e POSTGRES_TABLE=diag \
-    m4ttl33t/consumer:"${SEMVER_TAG}"
-else
-    sudo docker run --name "${CONSUMER_NAME}" \
-    --network "${DOCKER_NETWORK}" \
-    -e PYTHONUNBUFFERED=1 \
-    -e CONSUMER_CLIENT_ID="$CONSUMER_CLIENT_ID" \
-    -e CONSUMER_GROUP="$CONSUMER_GROUP" \
-    -e KAFKA_BROKER_NAME="$KAFKA_BROKER_NAME" \
-    -e KAFKA_PORT="$KAFKA_PORT" \
-    -e KAFKA_TOPIC="$KAFKA_TOPIC" \
-    -e POSTGRES_NAME="$POSTGRES_NAME" \
-    -e POSTGRES_USER="$POSTGRES_USER" \
-    -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-    -e POSTGRES_PORT="$POSTGRES_PORT" \
-    -e POSTGRES_DB=av_telemetry \
-    -e POSTGRES_TABLE=diag \
-    m4ttl33t/consumer:"${SEMVER_TAG}" >/dev/null
-fi
-
-printf "Waiting for KafkaConsumer initialization ..."
-for ((i=0;i<100;i++))
-do
-    if [ "$( sudo docker container inspect -f '{{.State.Status}}' "${CONSUMER_NAME}" )" == "running" ]
-    then
-        break
-    else
-        sleep 0.1
-    fi
+    # Wait until the container is up and running. Will fail instantly if internal issue
+    for ((j=0;j<100;j++))
+    do
+        if [ "$( sudo docker container inspect -f '{{.State.Status}}' "${consumer_container_name}" )" == "running" ]
+        then
+            if [[ "$VERBOSITY" == 1 ]]
+            then
+                printf "   %s created.\n" "$consumer_container_name"
+            fi
+            break
+        else
+            sleep 0.1
+        fi
+    done
+    printf "Done.\n"
 done
-printf "Done.\n"

@@ -47,14 +47,17 @@ dump_config() {
     printf "CONSUMER_GROUP: %s\n" "$CONSUMER_GROUP"
     printf "DOCKER_NETWORK: %s\n" "$DOCKER_NETWORK"
     printf "HTTP_LOG_FILE: %s\n" "$HTTP_LOG_FILE"
+    printf "KAFKA_AUTO_CREATE_TOPICS: %s\n" "$KAFKA_AUTO_CREATE_TOPICS"
     printf "KAFKA_BROKER_NAME: %s\n" "$KAFKA_BROKER_NAME"
-    printf "KAFKA_BROKER_ID: %s\n" "$KAFKA_BROKER_ID"
+    printf "KAFKA_BROKER_NUM_INSTANCES: %s\n" "$KAFKA_BROKER_NUM_INSTANCES"
+    printf "KAFKA_BROKER_ID_SEED: %s\n" "$KAFKA_BROKER_ID_SEED"
     printf "KAFKA_EXTERNAL_CONTAINER_PORT: %s\n" "$KAFKA_EXTERNAL_CONTAINER_PORT"
     printf "KAFKA_EXTERNAL_HOST_PORT: %s\n" "$KAFKA_EXTERNAL_HOST_PORT"
     printf "KAFKA_INTERNAL_CONTAINER_PORT: %s\n" "$KAFKA_INTERNAL_CONTAINER_PORT"
     printf "KAFKA_INTERNAL_HOST_PORT: %s\n" "$KAFKA_INTERNAL_HOST_PORT"
     printf "KAFKA_TOPIC: %s\n" "$KAFKA_TOPIC"
     printf "KAFKA_TOPIC_PARTITIONS: %s\n" "$KAFKA_TOPIC_PARTITIONS"
+    printf "KAFKA_TOPIC_REPLICATION_FACTOR: %s\n" "$KAFKA_TOPIC_REPLICATION_FACTOR"
     printf "POSTGRES_NAME: %s\n" "$POSTGRES_NAME"
     printf "POSTGRES_PASSWORD: %s\n" "$POSTGRES_PASSWORD"
     printf "POSTGRES_CONTAINER_PORT: %s\n" "$POSTGRES_CONTAINER_PORT"
@@ -69,9 +72,14 @@ dump_config() {
     printf "PRODUCER_HOST_PORT: %s\n" "$PRODUCER_HOST_PORT"
     printf "SEMVER_TAG: %s\n" "$SEMVER_TAG"
     printf "VERBOSITY: %s\n" "$VERBOSITY"
+    printf "ZOOKEEPER_ID_SEED: %s\n" "$ZOOKEEPER_ID_SEED"
     printf "ZOOKEEPER_NAME: %s\n" "$ZOOKEEPER_NAME"
-    printf "ZOOKEEPER_CONTAINER_PORT: %s\n" "$ZOOKEEPER_CONTAINER_PORT"
-    printf "ZOOKEEPER_HOST_PORT: %s\n" "$ZOOKEEPER_HOST_PORT"
+    printf "ZOOKEEPER_NUM_INSTANCES: %s\n" "$ZOOKEEPER_NUM_INSTANCES"
+    printf "ZOOKEEPER_CONTAINER_CLIENT_PORT: %s\n" "$ZOOKEEPER_CONTAINER_CLIENT_PORT"
+    printf "ZOOKEEPER_HOST_CLIENT_PORT: %s\n" "$ZOOKEEPER_HOST_CLIENT_PORT"
+    printf "ZOOKEEPER_ENSEMBLE_LEADER_PORT: %s\n" "$ZOOKEEPER_ENSEMBLE_LEADER_PORT"
+    printf "ZOOKEEPER_ENSEMBLE_ELECTION_PORT: %s\n" "$ZOOKEEPER_ENSEMBLE_ELECTION_PORT"
+    printf "ZOOKEEPER_COMMAND_WHITELIST: %s\n" "$ZOOKEEPER_COMMAND_WHITELIST"
 
 }
 
@@ -136,81 +144,107 @@ get_container_names() {
 
 kafka_init() {
 
-    if [[ "$container_names" == *"$KAFKA_BROKER_NAME"* ]]
-    then
-
-        if [[ "$VERBOSITY" == 1 ]]
-        then
-            printf "%s container already exists -- re-creating!\n" "$KAFKA_BROKER_NAME"
-        fi
-
-        # Stop and remove Kafka container
-        if [[ "$VERBOSITY" == 1 ]]
-        then
-            sudo docker stop "$KAFKA_BROKER_NAME"
-            sudo docker rm "$KAFKA_BROKER_NAME"
-        else
-            sudo docker stop "$KAFKA_BROKER_NAME">/dev/null
-            sudo docker rm "$KAFKA_BROKER_NAME">/dev/null
-        fi
-    fi
-
-    # Start the Kafka container
+    printf "Waiting for Kafka Broker initialization ...\n"
     if [[ "$VERBOSITY" == 1 ]]
     then
-        sudo docker run -p "${KAFKA_INTERNAL_HOST_PORT}":"${KAFKA_INTERNAL_CONTAINER_PORT}" \
-        -p "${KAFKA_EXTERNAL_HOST_PORT}":"${KAFKA_EXTERNAL_CONTAINER_PORT}" --name "$KAFKA_BROKER_NAME" \
-        --network "$DOCKER_NETWORK" \
-        --restart unless-stopped \
-        -e KAFKA_BROKER_ID="${KAFKA_BROKER_ID}" \
-        -e ALLOW_PLAINTEXT_LISTENER=yes \
-        -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
-        -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_BROKER_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
-        -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_BROKER_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
-        -e KAFKA_CFG_NUM_PARTITIONS="${KAFKA_TOPIC_PARTITIONS}" \
-        -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${ZOOKEEPER_CONTAINER_PORT}" \
-        -d bitnami/kafka:3.3.1
-    else
-        sudo docker run -p "${KAFKA_INTERNAL_HOST_PORT}":"${KAFKA_INTERNAL_CONTAINER_PORT}" \
-        -p "${KAFKA_EXTERNAL_HOST_PORT}":"${KAFKA_EXTERNAL_CONTAINER_PORT}" --name "$KAFKA_BROKER_NAME" \
-        --network "$DOCKER_NETWORK" \
-        --restart unless-stopped \
-        -e KAFKA_BROKER_ID="${KAFKA_BROKER_ID}" \
-        -e ALLOW_PLAINTEXT_LISTENER=yes \
-        -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
-        -e KAFKA_LISTENERS=PLAINTEXT://"${KAFKA_BROKER_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
-        -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${KAFKA_BROKER_NAME}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${KAFKA_INTERNAL_CONTAINER_PORT}" \
-        -e KAFKA_CFG_NUM_PARTITIONS="${KAFKA_TOPIC_PARTITIONS}" \
-        -e KAFKA_CFG_ZOOKEEPER_CONNECT="${ZOOKEEPER_NAME}":"${ZOOKEEPER_CONTAINER_PORT}" \
-        -d bitnami/kafka:3.3.1 >/dev/null
+        printf "Using Zookeeper connection string %s\n" "$zookeeper_connection_string"
     fi
-
-    printf "Waiting for Kafka initialization ..."
-    kafka_up=0
-    srvr_response=""
-    for ((i=0; i<100; i++))
+    for (( i=KAFKA_BROKER_ID_SEED; i<=KAFKA_BROKER_NUM_INSTANCES; i++ ))
     do
-        srvr_response=$(echo "dump" | nc 127.0.0.1 "$ZOOKEEPER_HOST_PORT" | grep brokers)
-        if [[ "$srvr_response" == *"brokers/ids/"* ]]
+
+        # Declare loop variable container name
+        kafka_container_name="$KAFKA_BROKER_NAME$i"
+        kafka_internal_host_port=$((KAFKA_INTERNAL_HOST_PORT+i-1))
+        kafka_external_host_port=$((KAFKA_EXTERNAL_HOST_PORT+i-1))
+        if [[ "$i" == 1 ]]
         then
-            kafka_up=1
-            break
+            kafka_leader_name="$kafka_container_name"
+            kafka_leader_port="$kafka_internal_host_port"
+        fi
+
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            printf "  Creating %s ..." "$kafka_container_name"
+        fi
+
+        # Remove the container if it already exists
+        if [[ "$container_names" == *"$kafka_container_name"* ]]
+        then
+
+            if [[ "$VERBOSITY" == 1 ]]
+            then
+                printf "%s container already exists -- re-creating!\n" "$kafka_container_name"
+                sudo docker stop "$kafka_container_name"
+                sudo docker rm "$kafka_container_name"
+            else
+                sudo docker stop "$kafka_container_name">/dev/null
+                sudo docker rm "$kafka_container_name">/dev/null
+            fi
+        fi
+
+        # Start the Kafka container
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            sudo docker run -p "${kafka_internal_host_port}":"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+            -p "${kafka_external_host_port}":"${KAFKA_EXTERNAL_CONTAINER_PORT}" --name "$kafka_container_name" \
+            --network "$DOCKER_NETWORK" \
+            --restart unless-stopped \
+            -e KAFKA_BROKER_ID="$i" \
+            -e ALLOW_PLAINTEXT_LISTENER=yes \
+            -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
+            -e KAFKA_LISTENERS=PLAINTEXT://"${kafka_container_name}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${kafka_internal_host_port}" \
+            -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${kafka_container_name}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${kafka_internal_host_port}" \
+            -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE="$KAFKA_AUTO_CREATE_TOPICS" \
+            -e KAFKA_CFG_NUM_PARTITIONS="${KAFKA_TOPIC_PARTITIONS}" \
+            -e KAFKA_CFG_ZOOKEEPER_CONNECT="${zookeeper_connection_string}" \
+            -d bitnami/kafka:3.3.1
         else
-            sleep 0.1
+            sudo docker run -p "${kafka_internal_host_port}":"${KAFKA_INTERNAL_CONTAINER_PORT}" \
+            -p "${kafka_external_host_port}":"${KAFKA_EXTERNAL_CONTAINER_PORT}" --name "$kafka_container_name" \
+            --network "$DOCKER_NETWORK" \
+            --restart unless-stopped \
+            -e KAFKA_BROKER_ID="$i" \
+            -e ALLOW_PLAINTEXT_LISTENER=yes \
+            -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
+            -e KAFKA_LISTENERS=PLAINTEXT://"${kafka_container_name}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${kafka_internal_host_port}" \
+            -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://"${kafka_container_name}":"${KAFKA_EXTERNAL_CONTAINER_PORT}",PLAINTEXT_HOST://localhost:"${kafka_internal_host_port}" \
+            -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE="$KAFKA_AUTO_CREATE_TOPICS" \
+            -e KAFKA_CFG_NUM_PARTITIONS="${KAFKA_TOPIC_PARTITIONS}" \
+            -e KAFKA_CFG_ZOOKEEPER_CONNECT="${zookeeper_connection_string}" \
+            -d bitnami/kafka:3.3.1 >/dev/null
+        fi
+
+        # Verify each broker has been registered by zookeeper
+        kafka_up=0
+        srvr_response=""
+        for ((j=0; j<100; j++))
+        do
+            srvr_response=$(echo "dump" | nc 127.0.0.1 "$ZOOKEEPER_HOST_CLIENT_PORT" | grep brokers)
+            if [[ "$srvr_response" == *"brokers/ids/$i"* ]]
+            then
+                kafka_up=1
+                if [[ "$VERBOSITY" == 1 ]]
+                then
+                    printf "\n%s instance up.\n" "$kafka_container_name"
+                fi
+                break
+            else
+                sleep 0.1
+            fi
+        done
+        if [[ "$kafka_up" == 0 ]]
+        then
+            printf "Zookeeper container %s took too long to gain a Kafka broker. Exiting ...\n" "$zookeeper_leader_name"
+            exit 1
         fi
     done
-    if [[ "$kafka_up" == 0 ]]
-    then
-        printf "Zookeeper container %s took too long to gain a Kafka broker. Exiting ..." "$ZOOKEEPER_NAME"
-        exit 1
-    fi
 
     # Create the Kafka topic if it doesn't exist
     if [[ "$VERBOSITY" == 1 ]]
     then
         printf "Getting existing Kafka topics ..."
     fi
-    kafka_topics=$(sudo docker exec -it "$KAFKA_BROKER_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$KAFKA_INTERNAL_CONTAINER_PORT --list && exit")
+    kafka_topics=$(sudo docker exec -it "$kafka_leader_name" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:${kafka_leader_port} --list && exit")
     if [[ "$VERBOSITY" == 1 ]]
     then
         printf "Done.\n"
@@ -221,10 +255,10 @@ kafka_init() {
         if [[ "$VERBOSITY" == 1 ]]
         then
             printf "Creating the Kafka topic %s ..." "$KAFKA_TOPIC"
-            sudo docker exec -it "$KAFKA_BROKER_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$KAFKA_INTERNAL_CONTAINER_PORT --create --topic $KAFKA_TOPIC && exit"
+            sudo docker exec -it "$kafka_leader_name" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_leader_port --create --topic $KAFKA_TOPIC --partitions $KAFKA_TOPIC_PARTITIONS --replication-factor $KAFKA_TOPIC_REPLICATION_FACTOR && exit"
             printf "Done.\n"
         else
-            sudo docker exec -it "$KAFKA_BROKER_NAME" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$KAFKA_INTERNAL_CONTAINER_PORT --create --topic $KAFKA_TOPIC && exit" >/dev/null
+            sudo docker exec -it "$kafka_leader_name" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_leader_port --create --topic $KAFKA_TOPIC --partitions $KAFKA_TOPIC_PARTITIONS --replication-factor $KAFKA_TOPIC_REPLICATION_FACTOR && exit" >/dev/null
         fi
 
     else
@@ -301,57 +335,115 @@ postgres_init() {
 
 zookeeper_init() {
 
-    if [[ "$container_names" == *"$ZOOKEEPER_NAME"* ]]
-    then
+    # Build the basic Zookeeper ensemble ZOO_SERVERS connection string
+    for (( i="$ZOOKEEPER_ID_SEED"; i<=ZOOKEEPER_NUM_INSTANCES; i++ ))
+    do
+        zookeeper_container_name="$ZOOKEEPER_NAME$i"
+        zookeeper_ensemble_string+="$zookeeper_container_name:$ZOOKEEPER_ENSEMBLE_LEADER_PORT:$ZOOKEEPER_ENSEMBLE_ELECTION_PORT,"
+    done
+    zookeeper_ensemble_string=${zookeeper_ensemble_string::-1}
+
+    # Start the zookeeper container(s)
+    printf "Waiting for Zookeeper initialization ...\n"
+    zookeeper_connection_string=""
+
+    for (( i="$ZOOKEEPER_ID_SEED"; i<=ZOOKEEPER_NUM_INSTANCES; i++ ))
+    do
+
+        # Declare loop variables
+        zookeeper_container_name="$ZOOKEEPER_NAME$i"
+        zookeeper_host_leader_port=$((ZOOKEEPER_ENSEMBLE_LEADER_PORT+i-1))
+        zookeeper_host_election_port=$((ZOOKEEPER_ENSEMBLE_ELECTION_PORT+i-1))
+        zookeeper_host_port=$((ZOOKEEPER_HOST_CLIENT_PORT+i-1))
+        zookeeper_connection_string+="$zookeeper_container_name:$ZOOKEEPER_CONTAINER_CLIENT_PORT,"  # Give to Kafka container (strip trailing comma)
+        zookeeper_ensemble_string_final="${zookeeper_ensemble_string/$zookeeper_container_name/"0.0.0.0"}"
+
         if [[ "$VERBOSITY" == 1 ]]
         then
-            printf "%s container already exists -- re-creating!\n" "$ZOOKEEPER_NAME"
-            sudo docker stop "$ZOOKEEPER_NAME"
-            sudo docker rm "$ZOOKEEPER_NAME"
-        else
-            sudo docker stop "$ZOOKEEPER_NAME" >/dev/null
-            sudo docker rm "$ZOOKEEPER_NAME" >/dev/null
+            printf "  Creating %s ..." "$zookeeper_container_name"
         fi
-    fi
 
-    # Start the zookeeper container
-    printf "Waiting for Zookeeper initialization ..."
-    if [[ "$VERBOSITY" == 1 ]]
-    then
-        sudo docker run -p "$ZOOKEEPER_HOST_PORT":"$ZOOKEEPER_CONTAINER_PORT" --name "$ZOOKEEPER_NAME" \
-        --network "$DOCKER_NETWORK" \
-        -e ALLOW_ANONYMOUS_LOGIN=yes \
-        -e ZOO_4LW_COMMANDS_WHITELIST="dump" \
-        -e ZOO_PORT_NUMBER="$ZOOKEEPER_CONTAINER_PORT" \
-        -d bitnami/zookeeper:3.7.1
-    else
-        sudo docker run -p "$ZOOKEEPER_HOST_PORT":"$ZOOKEEPER_CONTAINER_PORT" --name "$ZOOKEEPER_NAME" \
-        --network "$DOCKER_NETWORK" \
-        -e ALLOW_ANONYMOUS_LOGIN=yes \
-        -e ZOO_4LW_COMMANDS_WHITELIST="dump" \
-        -e ZOO_PORT_NUMBER="$ZOOKEEPER_CONTAINER_PORT" \
-        -d bitnami/zookeeper:3.7.1 >/dev/null
-    fi
-
-    # Wait for zookeeper to init
-    zookeeper_up=0
-    for ((i=0; i<100; i++))
-    do
-        srvr_response=$(echo "dump" | nc 127.0.0.1 "$ZOOKEEPER_HOST_PORT")
-        if [[ "$srvr_response" == *"Session"* ]]
+        if [[ "$i" == 1 ]]
         then
-            zookeeper_up=1
-            break
+            zookeeper_leader_name="$zookeeper_container_name"
+        fi
+
+        # Remove the container if it already exists
+        if [[ "$container_names" == *"$zookeeper_container_name"* ]]
+        then
+
+            if [[ "$VERBOSITY" == 1 ]]
+            then
+                printf "%s container already exists -- re-creating!\n" "$zookeeper_container_name"
+                sudo docker stop "$zookeeper_container_name"
+                sudo docker rm "$zookeeper_container_name"
+            else
+                sudo docker stop "$zookeeper_container_name">/dev/null
+                sudo docker rm "$zookeeper_container_name">/dev/null
+            fi
+        fi
+
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            sudo docker run --name "$zookeeper_container_name" \
+            --network "$DOCKER_NETWORK" \
+            -p "$zookeeper_host_port":"$ZOOKEEPER_CONTAINER_CLIENT_PORT" \
+            -p "$zookeeper_host_leader_port":"$ZOOKEEPER_ENSEMBLE_LEADER_PORT" \
+            -p "$zookeeper_host_election_port":"$ZOOKEEPER_ENSEMBLE_ELECTION_PORT" \
+            -e ZOO_SERVER_ID="$i" \
+            -e ZOO_SERVERS="$zookeeper_ensemble_string_final" \
+            -e ALLOW_ANONYMOUS_LOGIN=yes \
+            -e ZOO_4LW_COMMANDS_WHITELIST="$ZOOKEEPER_COMMAND_WHITELIST" \
+            -e ZOO_PORT_NUMBER="$ZOOKEEPER_CONTAINER_CLIENT_PORT" \
+            -d bitnami/zookeeper:3.7.1
         else
-            sleep 0.1
+            sudo docker run --name "$zookeeper_container_name" \
+            --network "$DOCKER_NETWORK" \
+            -p "$zookeeper_host_port":"$ZOOKEEPER_CONTAINER_CLIENT_PORT" \
+            -p "$zookeeper_host_leader_port":"$ZOOKEEPER_ENSEMBLE_LEADER_PORT" \
+            -p "$zookeeper_host_election_port":"$ZOOKEEPER_ENSEMBLE_ELECTION_PORT" \
+            -e ZOO_SERVER_ID="$i" \
+            -e ZOO_SERVERS="$zookeeper_ensemble_string_final" \
+            -e ALLOW_ANONYMOUS_LOGIN=yes \
+            -e ZOO_4LW_COMMANDS_WHITELIST="$ZOOKEEPER_COMMAND_WHITELIST" \
+            -e ZOO_PORT_NUMBER="$ZOOKEEPER_CONTAINER_CLIENT_PORT" \
+            -d bitnami/zookeeper:3.7.1 >/dev/null
         fi
     done
-    if [[ $zookeeper_up == 0 ]]
+
+    # Wait for each zookeeper instance to init
+    zookeeper_up=0
+    for (( i="$ZOOKEEPER_ID_SEED"; i<=ZOOKEEPER_NUM_INSTANCES; i++ ))
+    do
+        zookeeper_host_port=$((ZOOKEEPER_HOST_CLIENT_PORT+i-1))
+        for ((j=0; j<100; j++))
+        do
+            srvr_response=$(echo "dump" | nc 127.0.0.1 "$zookeeper_host_port")
+            if [[ "$srvr_response" == *"Session"* ]]
+            then
+                zookeeper_up=$((zookeeper_up+1))
+                if [[ "$VERBOSITY" == 1 ]]
+                then
+                    printf "\n%s instance up. Printing dump: \n%s\n" "$zookeeper_container_name" "$srvr_response"
+                fi
+                break
+            else
+                sleep 0.1
+            fi
+        done
+    done
+
+    # Exit if all instances are not up and running
+    if [ "$zookeeper_up" -lt "$ZOOKEEPER_NUM_INSTANCES" ]
     then
-        printf "Zookeeper container %s took too long to initialize. Exiting ..." "$ZOOKEEPER_NAME"
+        printf "Not all Zookeeper containers initialized. Exiting ...\n"
         exit 1
     fi
     printf "Done.\n"
+
+    # Trim trailing comma on zookeeper connection string
+    zookeeper_connection_string=${zookeeper_connection_string::-1}
+
 }
 
 ##################################################
@@ -403,14 +495,17 @@ CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$MASTER_CONFIG")
 CONSUMER_GROUP=$(jq -r .CONSUMER_GROUP "$MASTER_CONFIG")
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MASTER_CONFIG")
 HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE "$MASTER_CONFIG")
+KAFKA_AUTO_CREATE_TOPICS=$(jq -r .KAFKA_AUTO_CREATE_TOPICS "$MASTER_CONFIG")
 KAFKA_BROKER_NAME=$(jq -r .KAFKA_BROKER_NAME "$MASTER_CONFIG")
-KAFKA_BROKER_ID=$(jq -r .KAFKA_BROKER_ID "$MASTER_CONFIG")
+KAFKA_BROKER_NUM_INSTANCES=$(jq -r .KAFKA_BROKER_NUM_INSTANCES "$MASTER_CONFIG")
+KAFKA_BROKER_ID_SEED=$(jq -r .KAFKA_BROKER_ID_SEED "$MASTER_CONFIG")
 KAFKA_EXTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_EXTERNAL_CONTAINER_PORT "$MASTER_CONFIG")
 KAFKA_EXTERNAL_HOST_PORT=$(jq -r .KAFKA_EXTERNAL_HOST_PORT "$MASTER_CONFIG")
 KAFKA_INTERNAL_CONTAINER_PORT=$(jq -r .KAFKA_INTERNAL_CONTAINER_PORT "$MASTER_CONFIG")
 KAFKA_INTERNAL_HOST_PORT=$(jq -r .KAFKA_INTERNAL_HOST_PORT "$MASTER_CONFIG")
 KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC "$MASTER_CONFIG")
 KAFKA_TOPIC_PARTITIONS=$(jq -r .KAFKA_TOPIC_PARTITIONS "$MASTER_CONFIG")
+KAFKA_TOPIC_REPLICATION_FACTOR=$(jq -r .KAFKA_TOPIC_REPLICATION_FACTOR "$MASTER_CONFIG")
 POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$MASTER_CONFIG")
 POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD "$MASTER_CONFIG")
 POSTGRES_CONTAINER_PORT=$(jq -r .POSTGRES_CONTAINER_PORT "$MASTER_CONFIG")
@@ -424,9 +519,33 @@ PRODUCER_INGRESS_HTTP_LISTENER=$(jq -r .PRODUCER_INGRESS_HTTP_LISTENER "$MASTER_
 PRODUCER_CONTAINER_PORT=$(jq -r .PRODUCER_CONTAINER_PORT "$MASTER_CONFIG")
 PRODUCER_HOST_PORT=$(jq -r .PRODUCER_HOST_PORT "$MASTER_CONFIG")
 SEMVER_TAG=$(jq -r .SEMVER_TAG "$MASTER_CONFIG")
+ZOOKEEPER_COMMAND_WHITELIST=$(jq -r .ZOOKEEPER_COMMAND_WHITELIST "$MASTER_CONFIG")
+ZOOKEEPER_ID_SEED=$(jq -r .ZOOKEEPER_ID_SEED "$MASTER_CONFIG")
+ZOOKEEPER_ENSEMBLE_LEADER_PORT=$(jq -r .ZOOKEEPER_ENSEMBLE_LEADER_PORT "$MASTER_CONFIG")
+ZOOKEEPER_ENSEMBLE_ELECTION_PORT=$(jq -r .ZOOKEEPER_ENSEMBLE_ELECTION_PORT "$MASTER_CONFIG")
 ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME "$MASTER_CONFIG")
-ZOOKEEPER_CONTAINER_PORT=$(jq -r .ZOOKEEPER_CONTAINER_PORT "$MASTER_CONFIG")
-ZOOKEEPER_HOST_PORT=$(jq -r .ZOOKEEPER_HOST_PORT "$MASTER_CONFIG")
+ZOOKEEPER_NUM_INSTANCES=$(jq -r .ZOOKEEPER_NUM_INSTANCES "$MASTER_CONFIG")
+ZOOKEEPER_CONTAINER_CLIENT_PORT=$(jq -r .ZOOKEEPER_CONTAINER_CLIENT_PORT "$MASTER_CONFIG")
+ZOOKEEPER_HOST_CLIENT_PORT=$(jq -r .ZOOKEEPER_HOST_CLIENT_PORT "$MASTER_CONFIG")
+
+########### SANITIZE INPUT ###################
+if [[ (ZOOKEEPER_NUM_INSTANCES -lt 1) || ("$ZOOKEEPER_NUM_INSTANCES"%2 -eq 0)]]
+then
+    printf "ZOOKEEPER_NUM_INSTANCES cannot be < 1 or even. ZOOKEEPER_NUM_INSTANCES=%s\nExiting ...\n" "$ZOOKEEPER_NUM_INSTANCES"
+    exit 1
+fi
+
+if [[ $KAFKA_BROKER_NUM_INSTANCES -lt 1 ]]
+then
+    printf "KAFKA_BROKER_NUM_INSTANCES cannot be < 1. $KAFKA_BROKER_NUM_INSTANCES=%s\nExiting ...\n" "$KAFKA_BROKER_NUM_INSTANCES"
+    exit 1
+fi
+
+if [[ $KAFKA_TOPIC_REPLICATION_FACTOR -gt $KAFKA_BROKER_NUM_INSTANCES ]]
+then
+    printf "KAFKA_TOPIC_REPLICATION_FACTOR cannot be > KAFKA_BROKER_NUM_INSTANCES.\nKAFKA_BROKER_NUM_INSTANCES=%s\nKAFKA_TOPIC_REPLICATION_FACTOR=%s\nExiting ...\n" "$KAFKA_BROKER_NUM_INSTANCES" "$KAFKA_TOPIC_REPLICATION_FACTOR"
+    exit 1
+fi
 
 if [[ $VERBOSITY == 1 ]]
 then
@@ -439,7 +558,7 @@ bridge_init
 ############ DOCKER CONTAINERS: GET ############
 get_container_names
 
-# ############ ZOOKEEPER INIT ############
+############ ZOOKEEPER INIT ############
 zookeeper_init
 
 ############  KAFKA INIT ############
@@ -448,7 +567,7 @@ kafka_init
 ############  POSTGRES INIT ############
 postgres_init
 
-############  CONSUMER INIT ############
+###########  CONSUMER INIT ############
 if [[ $VERBOSITY == 1 ]]
 then
     bash "$SRC_PATH"/consumer/consumer_init.sh \
@@ -459,7 +578,7 @@ else
     -c "$MASTER_CONFIG"
 fi
 
-###########  PRODUCER INIT ############
+##########  PRODUCER INIT ############
 printf "Waiting for KafkaProducer initialization ..."
 http_server_ip=$(bash "$SRC_PATH"/producer/producer_init.sh \
 -c "$MASTER_CONFIG" | tail -1)

@@ -50,8 +50,9 @@ class Producer(KafkaProducer):
         """
 
         kafka_name = os.environ.get('KAFKA_BROKER_NAME')
+        kafka_id = os.environ.get('KAFKA_BROKER_ID_SEED')
         kafka_port = os.environ.get('KAFKA_PORT')
-        kafka_server = f"{kafka_name}:{kafka_port}"
+        kafka_server = f"{kafka_name}{kafka_id}:{kafka_port}"
         self.producer_kwargs = {}
         self.producer_kwargs['bootstrap_servers'] = kafka_server
 

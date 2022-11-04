@@ -3,17 +3,55 @@ sudo docker network create av_telemetry --driver bridge
 
 
 # Zookeeper container
-sudo docker run -p 2181:2181 --name zookeeper \
+sudo docker run --name zookeeper \
 --network av_telemetry \
+-p 2181:2181 \
+-e ZOO_SERVER_ID=1 \
 -e ALLOW_ANONYMOUS_LOGIN=yes \
 -e ZOO_4LW_COMMANDS_WHITELIST="dump" \
 -e ZOO_PORT_NUMBER=2181 \
 bitnami/zookeeper:3.7.1
 
+sudo docker run --name zookeeper1 \
+--network av_telemetry \
+-p 2181:2181 \
+-p 2888:2888 \
+-p 3888:3888 \
+-e ZOO_SERVER_ID=1 \
+-e ALLOW_ANONYMOUS_LOGIN=yes \
+-e ZOO_4LW_COMMANDS_WHITELIST="dump" \
+-e ZOO_PORT_NUMBER=2181 \
+-e ZOO_SERVERS=0.0.0.0:2888:3888,zookeeper2:2888:3888,zookeeper3:2888:3888 \
+bitnami/zookeeper:3.7.1
+
+sudo docker run --name zookeeper2 \
+--network av_telemetry \
+-p 2182:2181 \
+-p 2889:2888 \
+-p 3889:3888 \
+-e ZOO_SERVER_ID=2 \
+-e ALLOW_ANONYMOUS_LOGIN=yes \
+-e ZOO_4LW_COMMANDS_WHITELIST="dump" \
+-e ZOO_PORT_NUMBER=2181 \
+-e ZOO_SERVERS=zookeeper1:2888:3888,0.0.0.0:2888:3888,zookeeper3:2888:3888 \
+bitnami/zookeeper:3.7.1
+
+sudo docker run --name zookeeper3 \
+--network av_telemetry \
+-p 2183:2181 \
+-p 2890:2888 \
+-p 3890:3888 \
+-e ZOO_SERVER_ID=3 \
+-e ALLOW_ANONYMOUS_LOGIN=yes \
+-e ZOO_4LW_COMMANDS_WHITELIST="dump" \
+-e ZOO_PORT_NUMBER=2181 \
+-e ZOO_SERVERS=zookeeper1:2888:3888,zookeeper2:2888:3888,0.0.0.0:2888:3888 \
+bitnami/zookeeper:3.7.1
+
 # Check broker IDS
 echo "dump" | nc 127.0.0.1 <host port> | grep brokers
 
-# Kafka container
+# Kafka container - base
 sudo docker run -p 29092:29092 \
 -p 9092:9092 --name kafka-broker \
 --network av_telemetry \
@@ -24,16 +62,80 @@ sudo docker run -p 29092:29092 \
 -e KAFKA_LISTENERS=PLAINTEXT://kafka-broker:9092,PLAINTEXT_HOST://localhost:29092 \
 -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-broker:9092,PLAINTEXT_HOST://localhost:29092 \
 -e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181 \
+-e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false \
+-e KAFKA_CFG_NUM_PARTITIONS=1 \
 bitnami/kafka:3.3.1
+
+# Kafka container - multiple zookeeper
+sudo docker run -p 29092:29092 \
+-p 9092:9092 --name kafka-broker \
+--network av_telemetry \
+--restart unless-stopped \
+-e KAFKA_BROKER_ID=1 \
+-e ALLOW_PLAINTEXT_LISTENER=yes \
+-e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
+-e KAFKA_LISTENERS=PLAINTEXT://kafka-broker:9092,PLAINTEXT_HOST://localhost:29092 \
+-e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-broker:9092,PLAINTEXT_HOST://localhost:29092 \
+-e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper1:2181,zookeeper2:2182,zookeeper3:2183 \
+-e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false \
+-e KAFKA_CFG_NUM_PARTITIONS=1 \
+bitnami/kafka:3.3.1
+
+# Kafka container - multiple brokers
+sudo docker run -p 29091:29092 \
+-p 9092:9092 --name kafka-broker1 \
+--network av_telemetry \
+--restart unless-stopped \
+-e KAFKA_BROKER_ID=1 \
+-e ALLOW_PLAINTEXT_LISTENER=yes \
+-e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
+-e KAFKA_LISTENERS=PLAINTEXT://kafka-broker1:9092,PLAINTEXT_HOST://localhost:29091 \
+-e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-broker1:9092,PLAINTEXT_HOST://localhost:29091 \
+-e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper1:2181,zookeeper2:2181,zookeeper3:2181 \
+-e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false \
+-e KAFKA_CFG_NUM_PARTITIONS=1 \
+bitnami/kafka:3.3.1
+
+sudo docker run -p 29092:29092 \
+-p 9093:9092 --name kafka-broker2 \
+--network av_telemetry \
+--restart unless-stopped \
+-e KAFKA_BROKER_ID=2 \
+-e ALLOW_PLAINTEXT_LISTENER=yes \
+-e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
+-e KAFKA_LISTENERS=PLAINTEXT://kafka-broker2:9092,PLAINTEXT_HOST://localhost:29092 \
+-e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-broker2:9092,PLAINTEXT_HOST://localhost:29092 \
+-e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper1:2181,zookeeper2:2181,zookeeper3:2181 \
+-e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false \
+-e KAFKA_CFG_NUM_PARTITIONS=1 \
+bitnami/kafka:3.3.1
+
+sudo docker run -p 29093:29092 \
+-p 9094:9092 --name kafka-broker3 \
+--network av_telemetry \
+--restart unless-stopped \
+-e KAFKA_BROKER_ID=3 \
+-e ALLOW_PLAINTEXT_LISTENER=yes \
+-e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT \
+-e KAFKA_LISTENERS=PLAINTEXT://kafka-broker3:9092,PLAINTEXT_HOST://localhost:29093 \
+-e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-broker3:9092,PLAINTEXT_HOST://localhost:29093 \
+-e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false \
+-e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper1:2181,zookeeper2:2181,zookeeper3:2181 \
+-e KAFKA_CFG_NUM_PARTITIONS=1 \
+bitnami/kafka:3.3.1
+
 
 # Kafka debug
 
 # List Topics
-sudo docker exec -it kafka-broker bash
+sudo docker exec -it kafka-broker2 bash
 cd /opt/bitnami/kafka/bin
-kafka-topics.sh --bootstrap-server localhost:29092 --list
-# kafka-topics.sh --bootstrap-server localhost:29092 --create --topic test_topic
+kafka-topics.sh --bootstrap-server localhost:29091 --list
+# kafka-topics.sh --bootstrap-server localhost:29091 --create --topic test_topic
 # kafka-topics.sh --bootstrap-server localhost:29092 --create --topic test_topic2 --partitions 3
+# kafka-topics.sh --bootstrap-server localhost:29091 --create --topic test_topic --partitions 1 --replication-factor 3
+
+kafka-configs.sh --bootstrap-server kafka-broker1:9092 --entity-type brokers --entity-name 1 --all --describe
 
 # Produce a message via console
 kafka-console-producer.sh --bootstrap-server localhost:29092 --topic test_topic2
@@ -50,30 +152,15 @@ kafka-consumer-groups.sh --list --bootstrap-server localhost:29092
 cd /bitnami/kafka/data
 
 # Postgres container
-sudo docker run -p 5432:5432 \
+sudo docker run -p 54321:54321 \
 --name postgres \
 --network av_telemetry \
+--restart unless-stopped \
 -e POSTGRES_PASSWORD=mysecretpassword \
 -e POSTGRES_USER=postgres \
-m4ttl33t/postgres:0.0.3
-
-# Postgres container (official image)
-cd ~/repos/kafka-python-postgres-etl/src/db
-sudo docker run -p 5431:5431 \
---name postgres_official \
--e POSTGRES_PASSWORD=mysecretpassword \
--e POSTGRES_USER=postgres \
--e PGPORT=5431 \
--v init.sql:/docker-entrypoint-initdb.d \
-postgres
-
-sudo docker run -p 5431:5431 \
---name postgres_official \
--e POSTGRES_PASSWORD=mysecretpassword \
--e POSTGRES_USER=postgres \
--e PGPORT=5431 \
--v "$(pwd)"/src/db:/docker-entrypoint-initdb.d \
-postgres
+-e PGPORT=54321 \
+-v /home/matt/repos/kafka-python-postgres-etl/src/db:/docker-entrypoint-initdb.d \
+postgres:15.0
 
 # inspect the database
 psql -h localhost -p 54321 -U postgres

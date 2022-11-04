@@ -14,7 +14,7 @@ A consumer (`consumer.Consumer`) will consume the published JSON string from the
 
 ## Getting Started
 
-The bash scripts rely on `jq` to parse JSON. If this is not installed in your environment, then run the following:
+The bash scripts rely on Bash v4+ and `jq` to parse JSON. If this is not installed in your environment, then run the following:
 
     $sudo apt-get update
     $sudo apt-get install jq
@@ -51,6 +51,46 @@ The server infrastructure has one or more of the following containers:
 
 As of this revision, this infrastructure is "single-node" and operates locally for demonstration purposes. Each container
 communicates over a Docker bridge network.
+
+### Kafka Cluster
+
+Apache Kafka is used as the main publish-subscribe system. In general, a production-grade cluster would be distributed across multiple,
+physical servers in varying topologies depending on the use case. Here, in this development-grade cluster, only one physical server 
+is used; a multi-node cluster architecture is realized through multiple Kafka (and Zookeeper) containers. 
+
+These differing cases (true multi-server vs local multi-container) are not so different with respect to Kafka internals: there are still multiple brokers
+to provide data redundancy; there are still multiple consumers to read
+from each partition; zookeeper containers still elect leaders when a container fails, etc. At least one big difference or drawback
+with the local, multi-container case is there is **only one machine** -- bringing the _machine_ down brings down the whole cluster!
+
+**Security** is always worth mentioning; little provisions have been made to secure this Kafka cluster, and the security protocol is PLAINTEXT.
+In production, this would change; Apache Kafka comes with a few options for implementing enhanced security. The clients (producers and consumers)
+can authenticate with brokers via SSL or SASL. Brokers can authenticate with Zookeeper through SASL and/or mTLS. Further, the data transfer between
+most cluster components can also be encrypted via SSL, and specific authorizations can be granted for specific operations between specific entities
+in the cluster. This is a big topic that isn't studied here.
+
+#### Consumers
+
+The consumers all belong to one group and use one message key.
+
+Having one message key ensures the same partition is being consumed from each time, in order.
+Given that there is only one 'thing' consumed, namely the AV stream of diagnostics, this is convenient.
+
+The consumer all belong to one group for load balancing. If all the consumer instances have the same consumer group,
+then the records will effectively be load-balanced over the consumer instances.
+
+#### A Note About Zookeeper
+
+In this project, Kafka brokers explicitly connect to a Zookeeper _ensemble_. An ensemble is a collection of Zookeeper instances that operate in a "quorum";
+a majority of the Zookeeper instances must acknowledge a message transaction for it to be committed. An odd number of Zookeeper servers is enforced for this reason.
+
+Historically, Zookeeper was needed to manage the metadata of Kafka, i.e.,
+service discrovery, broker election in leader-follower roles, topic creation, etc. If Zookeeper goes down entirely, Kafka can still handle the data
+stream on an already-created topic, but you would not be able to create new topics or brokers.
+
+Apache Kafka 2.8.0+ has done away with the reliance on Zookeeper. Instead, a Kafka Raft metadata (KRaft) mode can be activated to carry out
+required metadata activities formerly left to Zookeeper. This is supposed to present an easier-to-manage and more performant cluster.
+See [KIP-500](https://cwiki.apache.org/confluence/display/KAFKA/KIP-500%3A+Replace+ZooKeeper+with+a+Self-Managed+Metadata+Quorum).
 
 ### Clients
 

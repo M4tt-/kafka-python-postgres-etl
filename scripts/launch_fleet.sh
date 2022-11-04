@@ -117,8 +117,13 @@ SEMVER_TAG=$(jq -r .SEMVER_TAG "$MASTER_CONFIG")
 
 if ! [[ "$NUM_VEHICLES" =~ ^[0-9]+$ ]]
     then
-        printf "--num-vehicles must be integer. Exiting on 1 ..."
+        printf "--num-vehicles must be integer. Exiting on 1 ...\n"
         exit 1
+fi
+if [[ "$NUM_VEHICLES" -lt 1 ]]
+then
+    printf "NUM_VEHICLES cannot be < 1. $NUM_VEHICLES=%s\nExiting ..." "$NUM_VEHICLES"
+    exit 1
 fi
 
 if [[ $VERBOSITY == 1 ]]
