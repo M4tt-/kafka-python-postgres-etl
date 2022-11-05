@@ -58,6 +58,15 @@ dump_config() {
 }
 
 ###################################################
+# FUNCTION: PARSE FOR HTTP SERVER FROM FILE       #
+###################################################
+
+get_http_server_from_file() {
+
+    parsed_srv=$(cat "$HTTP_LOG_FILE" | tail -1 | cut -d":" -f2)
+}
+
+###################################################
 # MAIN                                            #
 ###################################################
 
@@ -105,7 +114,7 @@ done
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MASTER_CONFIG")
 HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE "$MASTER_CONFIG")
 PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE "$MASTER_CONFIG")
-PRODUCER_HTTP_SERVER=$(tail -1 "$HTTP_LOG_FILE")
+PRODUCER_HTTP_SERVER=$(tail -1 < "$HTTP_LOG_FILE" | cut -d":" -f2)
 PRODUCER_HTTP_PORT=$(jq -r .PRODUCER_CONTAINER_PORT "$MASTER_CONFIG")
 VEHICLE_REPORT_DELAY=$(jq -r .VEHICLE_REPORT_DELAY "$MASTER_CONFIG")
 VEHICLE_VELOCITY_X=$(jq -r .VEHICLE_VELOCITY_X "$MASTER_CONFIG")

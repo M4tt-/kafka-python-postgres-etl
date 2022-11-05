@@ -50,7 +50,7 @@ dump_config() {
     printf "POSTGRES_PASSWORD: %s\n" "$POSTGRES_PASSWORD"
     printf "POSTGRES_PORT: %s\n" "$POSTGRES_PORT"
     printf "POSTGRES_USER: %s\n" "$POSTGRES_USER"
-    printf "SEMVER_TAG: %s\n" "$SEMVER_TAG"
+    printf "SEMVER_TAG: %s\n\n" "$SEMVER_TAG"
 
 }
 
@@ -155,6 +155,7 @@ do
     # Run the consumer container
     if [[ "$VERBOSITY" == 1 ]]
     then
+        printf "   Creating %s ..." "$consumer_container_name"
         sudo docker run --name "${consumer_container_name}" \
         --network "${DOCKER_NETWORK}" \
         -e PYTHONUNBUFFERED=1 \
@@ -195,14 +196,9 @@ do
     do
         if [ "$( sudo docker container inspect -f '{{.State.Status}}' "${consumer_container_name}" )" == "running" ]
         then
-            if [[ "$VERBOSITY" == 1 ]]
-            then
-                printf "   %s created.\n" "$consumer_container_name"
-            fi
             break
         else
             sleep 0.1
         fi
     done
-    printf "Done.\n"
 done

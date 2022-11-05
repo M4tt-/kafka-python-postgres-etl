@@ -79,7 +79,7 @@ dump_config() {
     printf "ZOOKEEPER_HOST_CLIENT_PORT: %s\n" "$ZOOKEEPER_HOST_CLIENT_PORT"
     printf "ZOOKEEPER_ENSEMBLE_LEADER_PORT: %s\n" "$ZOOKEEPER_ENSEMBLE_LEADER_PORT"
     printf "ZOOKEEPER_ENSEMBLE_ELECTION_PORT: %s\n" "$ZOOKEEPER_ENSEMBLE_ELECTION_PORT"
-    printf "ZOOKEEPER_COMMAND_WHITELIST: %s\n" "$ZOOKEEPER_COMMAND_WHITELIST"
+    printf "ZOOKEEPER_COMMAND_WHITELIST: %s\n\n" "$ZOOKEEPER_COMMAND_WHITELIST"
 
 }
 
@@ -147,7 +147,7 @@ kafka_init() {
     printf "Waiting for Kafka Broker initialization ...\n"
     if [[ "$VERBOSITY" == 1 ]]
     then
-        printf "Using Zookeeper connection string %s\n" "$zookeeper_connection_string"
+        printf "  Zookeeper connection string %s\n" "$zookeeper_connection_string"
     fi
     for (( i=KAFKA_BROKER_ID_SEED; i<=KAFKA_BROKER_NUM_INSTANCES; i++ ))
     do
@@ -223,10 +223,6 @@ kafka_init() {
             if [[ "$srvr_response" == *"brokers/ids/$i"* ]]
             then
                 kafka_up=1
-                if [[ "$VERBOSITY" == 1 ]]
-                then
-                    printf "\n%s instance up.\n" "$kafka_container_name"
-                fi
                 break
             else
                 sleep 0.1
@@ -242,7 +238,7 @@ kafka_init() {
     # Create the Kafka topic if it doesn't exist
     if [[ "$VERBOSITY" == 1 ]]
     then
-        printf "Getting existing Kafka topics ..."
+        printf "\n  Getting existing Kafka topics ..."
     fi
     kafka_topics=$(sudo docker exec -it "$kafka_leader_name" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:${kafka_leader_port} --list && exit")
     if [[ "$VERBOSITY" == 1 ]]
@@ -254,9 +250,9 @@ kafka_init() {
         # Create the Kafka topic
         if [[ "$VERBOSITY" == 1 ]]
         then
-            printf "Creating the Kafka topic %s ..." "$KAFKA_TOPIC"
+            printf "  Creating the Kafka topic %s ..." "$KAFKA_TOPIC"
             sudo docker exec -it "$kafka_leader_name" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_leader_port --create --topic $KAFKA_TOPIC --partitions $KAFKA_TOPIC_PARTITIONS --replication-factor $KAFKA_TOPIC_REPLICATION_FACTOR && exit"
-            printf "Done.\n"
+            printf " Done.\n"
         else
             sudo docker exec -it "$kafka_leader_name" sh -c "cd /opt/bitnami/kafka && bin/kafka-topics.sh --bootstrap-server localhost:$kafka_leader_port --create --topic $KAFKA_TOPIC --partitions $KAFKA_TOPIC_PARTITIONS --replication-factor $KAFKA_TOPIC_REPLICATION_FACTOR && exit" >/dev/null
         fi
@@ -265,7 +261,7 @@ kafka_init() {
 
         if [[ "$VERBOSITY" == 1 ]]
         then
-            printf "Kafka topic %s already exists -- skipping topic creation.\n" "$KAFKA_TOPIC"
+            printf "  Kafka topic %s already exists -- skipping topic creation.\n" "$KAFKA_TOPIC"
         fi
     fi
 }
@@ -579,10 +575,13 @@ else
 fi
 
 ##########  PRODUCER INIT ############
-printf "Waiting for KafkaProducer initialization ..."
-http_server_ip=$(bash "$SRC_PATH"/producer/producer_init.sh \
--c "$MASTER_CONFIG" | tail -1)
-printf "Done.\n"
-dir=$(dirname "$HTTP_LOG_FILE")
-mkdir -p "$dir"
-printf "HTTP Server IP:\n%s\n" "$http_server_ip" | tee "$HTTP_LOG_FILE"
+
+if [[ $VERBOSITY == 1 ]]
+then
+    bash "$SRC_PATH"/producer/producer_init.sh \
+    -c "$MASTER_CONFIG" \
+    -v
+else
+    bash "$SRC_PATH"/producer/producer_init.sh \
+    -c "$MASTER_CONFIG"
+fi
