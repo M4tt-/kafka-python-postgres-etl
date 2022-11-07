@@ -196,6 +196,12 @@ sudo docker run -p 5000:5000 --name producer \
 -e KAFKA_TOPIC=test_topic \
 m4ttl33t/producer:0.0.3
 
+# nginx container
+sudo docker run --name nginx \
+-p 8080:80 \
+-v /home/matt/repos/kafka-python-postgres-etl/src/nginx:/etc/nginx/conf.d:ro \
+nginx:1.23
+
 # Vehicle container
 sudo docker run --name vehicle \
 --network av_telemetry \
