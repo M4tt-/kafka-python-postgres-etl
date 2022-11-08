@@ -58,6 +58,10 @@ dump_config() {
     printf "KAFKA_TOPIC: %s\n" "$KAFKA_TOPIC"
     printf "KAFKA_TOPIC_PARTITIONS: %s\n" "$KAFKA_TOPIC_PARTITIONS"
     printf "KAFKA_TOPIC_REPLICATION_FACTOR: %s\n" "$KAFKA_TOPIC_REPLICATION_FACTOR"
+    printf "NGINX_NAME: %s\n" "$NGINX_NAME"
+    printf "NGINX_SERVER_NAME: %s\n" "$NGINX_SERVER_NAME"
+    printf "NGINX_CONTAINER_PORT: %s\n" "$NGINX_CONTAINER_PORT"
+    printf "NGINX_HOST_PORT: %s\n" "$NGINX_HOST_PORT"
     printf "POSTGRES_NAME: %s\n" "$POSTGRES_NAME"
     printf "POSTGRES_PASSWORD: %s\n" "$POSTGRES_PASSWORD"
     printf "POSTGRES_CONTAINER_PORT: %s\n" "$POSTGRES_CONTAINER_PORT"
@@ -266,6 +270,116 @@ kafka_init() {
     fi
 }
 
+
+###################################################
+# FUNCTION: NGINX INIT                            #
+###################################################
+
+nginx_init() {
+
+    printf "Waiting for NGINX initialization ... \n"
+    # Read in producer host names from file
+    srvr_list=""
+    while read -r line; do
+        ip=$(echo "$line" | cut -d":" -f2)
+        srv="    server $ip:$PRODUCER_CONTAINER_PORT;\r\n"
+        srvr_list+=$srv
+    done < "$HTTP_LOG_FILE"
+
+    if [[ "$VERBOSITY" == 1 ]]
+    then
+        printf "  Constructing app.conf ..."
+    fi
+    # Construct the http config using perl find-replace
+    cp "$SRC_PATH"/nginx/app.conf.template "$SRC_PATH"/nginx/app.conf
+
+    # Upstream block
+    perl -pi -e "s/<server_list>/$srvr_list/g" "$SRC_PATH"/nginx/app.conf
+
+    # Server block
+    perl -pi -e "s/<endpoint>/${PRODUCER_HTTP_RULE}/g" "$SRC_PATH"/nginx/app.conf
+    perl -pi -e "s/<producer_port>/${PRODUCER_CONTAINER_PORT}/g" "$SRC_PATH"/nginx/app.conf
+    perl -pi -e "s/<nginx_srv_name>/${NGINX_SERVER_NAME}/g" "$SRC_PATH"/nginx/app.conf
+
+    if [[ "$VERBOSITY" == 1 ]]
+    then
+        printf " Done.\n"
+    fi
+
+    # Teardown and retstart container if it's already running
+    if [[ "$container_names" == *"$NGINX_NAME"* ]]
+    then
+
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            printf "%s container already exists -- re-creating!\n" "$NGINX_NAME"
+        fi
+
+        # Stop and remove Postgres container
+        if [[ "$VERBOSITY" == 1 ]]
+        then
+            sudo docker stop "$NGINX_NAME"
+            sudo docker rm "$NGINX_NAME"
+        else
+            sudo docker stop "$NGINX_NAME">/dev/null
+            sudo docker rm "$NGINX_NAME">/dev/null
+        fi
+    fi
+
+    # Start the nginx container
+    if [[ "$VERBOSITY" == 1 ]]
+    then
+        sudo docker run --name "$NGINX_NAME" \
+        --network "$DOCKER_NETWORK" \
+        -p "$NGINX_HOST_PORT":"$NGINX_CONTAINER_PORT" \
+        -v "$SRC_PATH"/nginx:/etc/nginx/conf.d:ro \
+        -d nginx:1.23
+    else
+        sudo docker run --name "$NGINX_NAME" \
+        --network "$DOCKER_NETWORK" \
+        -p "$NGINX_HOST_PORT":"$NGINX_CONTAINER_PORT" \
+        -v "$SRC_PATH"/nginx:/etc/nginx/conf.d:ro \
+        -d nginx:1.23>/dev/null
+    fi
+
+    # Ensure nginx is up and running
+    for ((j=0;j<100;j++))
+    do
+        if [ "$( sudo docker container inspect -f '{{.State.Status}}' "${NGINX_NAME}" )" == "running" ]
+        then
+            lb_ip=$(sudo docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$NGINX_NAME")
+            if [[ "$VERBOSITY" == 1 ]]
+            then
+                printf "   %s:%s\n" "$NGINX_NAME" "$lb_ip"
+            fi
+            break
+        else
+            sleep 0.1
+        fi
+    done
+
+    nginx_up=0
+    srvr_response=""
+    for ((j=0; j<100; j++))
+    do
+        srvr_response=$(curl http://"$lb_ip":"$PRODUCER_CONTAINER_PORT")
+        if [[ "$srvr_response" == *"Welcome to nginx!"* ]]
+        then
+            nginx_up=1
+            break
+        else
+            sleep 0.1
+        fi
+    done
+    if [[ "$nginx_up" == 0 ]]
+    then
+        printf "nginx container %s took too long to respond to requests. Exiting ...\n" "$NGINX_NAME"
+        exit 1
+    fi
+    printf "Done.\n"
+
+}
+
 ###################################################
 # FUNCTION: POSTGRES INIT                         #
 ###################################################
@@ -411,6 +525,7 @@ zookeeper_init() {
     zookeeper_up=0
     for (( i="$ZOOKEEPER_ID_SEED"; i<=ZOOKEEPER_NUM_INSTANCES; i++ ))
     do
+        zookeeper_container_name="$ZOOKEEPER_NAME$i"
         zookeeper_host_port=$((ZOOKEEPER_HOST_CLIENT_PORT+i-1))
         for ((j=0; j<100; j++))
         do
@@ -502,6 +617,10 @@ KAFKA_INTERNAL_HOST_PORT=$(jq -r .KAFKA_INTERNAL_HOST_PORT "$MASTER_CONFIG")
 KAFKA_TOPIC=$(jq -r .KAFKA_TOPIC "$MASTER_CONFIG")
 KAFKA_TOPIC_PARTITIONS=$(jq -r .KAFKA_TOPIC_PARTITIONS "$MASTER_CONFIG")
 KAFKA_TOPIC_REPLICATION_FACTOR=$(jq -r .KAFKA_TOPIC_REPLICATION_FACTOR "$MASTER_CONFIG")
+NGINX_NAME=$(jq -r .NGINX_NAME "$MASTER_CONFIG")
+NGINX_SERVER_NAME=$(jq -r .NGINX_SERVER_NAME "$MASTER_CONFIG")
+NGINX_CONTAINER_PORT=$(jq -r .NGINX_CONTAINER_PORT "$MASTER_CONFIG")
+NGINX_HOST_PORT=$(jq -r .NGINX_HOST_PORT "$MASTER_CONFIG")
 POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$MASTER_CONFIG")
 POSTGRES_PASSWORD=$(jq -r .POSTGRES_PASSWORD "$MASTER_CONFIG")
 POSTGRES_CONTAINER_PORT=$(jq -r .POSTGRES_CONTAINER_PORT "$MASTER_CONFIG")
@@ -585,3 +704,6 @@ else
     bash "$SRC_PATH"/producer/producer_init.sh \
     -c "$MASTER_CONFIG"
 fi
+
+############ NGINX INIT ################
+nginx_init

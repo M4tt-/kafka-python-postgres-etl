@@ -1,20 +1,19 @@
 upstream producers {
-    server 172.26.0.8:5001;
-
+<server_list>
 }
 
 server {
 
-    listen       5001;
-    listen  [::]:5001;
-    server_name  av_load_balancer;
+    listen       <producer_port>;
+    listen  [::]:<producer_port>;
+    server_name  <nginx_srv_name>;
 
     location / {
         root   /usr/share/nginx/html;
         index  index.html index.htm;
     }
 
-    location = /events {
+    location = /<endpoint> {
 
         proxy_pass http://producers;
     }

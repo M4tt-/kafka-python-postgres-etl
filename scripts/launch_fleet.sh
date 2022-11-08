@@ -113,8 +113,9 @@ done
 
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MASTER_CONFIG")
 HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE "$MASTER_CONFIG")
+NGINX_NAME=$(jq -r .NGINX_NAME "$MASTER_CONFIG")
 PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE "$MASTER_CONFIG")
-PRODUCER_HTTP_SERVER=$(tail -1 < "$HTTP_LOG_FILE" | cut -d":" -f2)
+PRODUCER_HTTP_SERVER=$(sudo docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$NGINX_NAME")
 PRODUCER_HTTP_PORT=$(jq -r .PRODUCER_CONTAINER_PORT "$MASTER_CONFIG")
 VEHICLE_REPORT_DELAY=$(jq -r .VEHICLE_REPORT_DELAY "$MASTER_CONFIG")
 VEHICLE_VELOCITY_X=$(jq -r .VEHICLE_VELOCITY_X "$MASTER_CONFIG")
@@ -195,7 +196,7 @@ do
         -e VEHICLE_VELOCITY_X="$VEHICLE_VELOCITY_X" \
         -e VEHICLE_VELOCITY_Y="$VEHICLE_VELOCITY_Y" \
         -e VEHICLE_VELOCITY_Z="$VEHICLE_VELOCITY_Z" \
-        m4ttl33t/vehicle:"${SEMVER_TAG}"
+        -d m4ttl33t/vehicle:"${SEMVER_TAG}"
     else
         sudo docker run --name "${container_name}" \
         --network "${DOCKER_NETWORK}" \
@@ -207,7 +208,7 @@ do
         -e VEHICLE_VELOCITY_X="$VEHICLE_VELOCITY_X" \
         -e VEHICLE_VELOCITY_Y="$VEHICLE_VELOCITY_Y" \
         -e VEHICLE_VELOCITY_Z="$VEHICLE_VELOCITY_Z" \
-        m4ttl33t/vehicle:"${SEMVER_TAG}" > /dev/null
+        -d m4ttl33t/vehicle:"${SEMVER_TAG}" > /dev/null
     fi
     printf "  Done.\n"
 done

@@ -5,13 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.0.5] - 2022-??-??
+## [0.0.5] - 2022-11-08
 
-TL;DR: Revised for multi-node Kafka cluster.
+TL;DR: Revised to have a completely scalable architecture.
 
 ### Added
 
-- TODO: Added -v argument to `teardown_XXXXX.sh` scripts for consistency with other scripts
+- Extended Kafka settings, e.g., topic replication and keyed partitions
+- nginx load balancer exists for serving HTTP requests between Vehicles and Kafka Producers
+    - See `src/nginx/app.conf.template` for nginx config
+- PRODUCER_NUM_INSTANCES dictates how many Kafka Producers will be spawned
+- CONSUMER_NUM_INSTANCES dictates how many Kafka Consumers will be spwaned
+- KAFKA_BROKER_NUM_INSTANCES dictates how many Kafka brokers will be spawned
+- ZOOKEEPER_NUM_INSTANCES dictates how many Zookeeper instances will be spawned in ensemble
 
 ### Changed
 
@@ -21,9 +27,9 @@ TL;DR: Revised for multi-node Kafka cluster.
 - Added PRODUCER_MESSAGE_KEY env var and modified producer.Producer.publish_event() to force each Producer to write to only one partition
 - Added CONSUMER_GROUP to config.master and modified consumer.Consumer to subscribe to a consumer group.
 - Updated README.md
-
-TRY TWO CONSUMERS NEXT!
-
+- `producer/producer.Producer.process_event()` now returns 200 HTTP code in addition to text in GET requests to end point
+- `producer/producer.Producer.publish_event()` now publishes to keyed partitions
+- `consumer/consumer.Consumer` instances now belong to the same group for load balancing
 
 ### Deprecated
 

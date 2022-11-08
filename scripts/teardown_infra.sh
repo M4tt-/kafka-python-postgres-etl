@@ -70,9 +70,20 @@ done
 CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$MASTER_CONFIG")
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MASTER_CONFIG")
 KAFKA_BROKER_NAME=$(jq -r .KAFKA_BROKER_NAME "$MASTER_CONFIG")
+NGINX_NAME=$(jq -r .NGINX_NAME "$MASTER_CONFIG")
 POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$MASTER_CONFIG")
 PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$MASTER_CONFIG")
 ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME "$MASTER_CONFIG")
+
+########### GET REFERENCE PATH ###################
+
+MY_PATH=$(dirname "$0")            # relative
+MY_PATH=$(cd "$MY_PATH" && pwd)    # absolutized and normalized
+if [[ -z "$MY_PATH" ]]
+then
+  exit 1  # fail
+fi
+SRC_PATH="$(dirname "$MY_PATH")/src"
 
 ############ DOCKER CONTAINERS: GET ############
 
@@ -91,6 +102,21 @@ do
         printf " Done.\n"
     fi
 done
+
+############  NGINX TEARDOWN ############
+printf "\nTearing down Load Balancer ...\n\n"
+
+if [[ "$container_names" == *"$NGINX_NAME"* ]]
+then
+    printf "Stopping %s ..." "$NGINX_NAME"
+    sudo docker stop "$NGINX_NAME">/dev/null
+    sudo docker rm "$NGINX_NAME">/dev/null
+    printf " Done.\n"
+fi
+
+#printf "Restoring app.conf.bak ... "
+#rm "$SRC_PATH"/nginx/app.conf
+#printf "Done.\n"
 
 ############  PRODUCER TEARDOWN ############
 printf "\nTearing down KafkaProducers ...\n\n"

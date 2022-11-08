@@ -81,7 +81,7 @@ class Producer(KafkaProducer):
         if request.method in ['GET']:
             out_str = f"Welcome to KafkaProducer/HTTPServer!\n\n" \
                       f"Events served: {self.post_count}."
-            return out_str
+            return out_str, 200
 
         if request.method in ['POST']:
             self.post_count += 1

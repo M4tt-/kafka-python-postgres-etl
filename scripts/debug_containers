@@ -198,9 +198,30 @@ m4ttl33t/producer:0.0.3
 
 # nginx container
 sudo docker run --name nginx \
+--network av_telemetry \
 -p 8080:80 \
 -v /home/matt/repos/kafka-python-postgres-etl/src/nginx:/etc/nginx/conf.d:ro \
 nginx:1.23
+
+# base image
+sudo docker run --name nginx \
+-p 8080:80 \
+nginx:1.23
+
+# read in server list
+srvr_list=""
+while read line; do
+    ip=$(echo $line | cut -d":" -f2)
+    srv="    server $ip;\r\n"
+    srvr_list+=$srv
+done < /tmp/launch_infra_http_server.log
+echo $srvr_list
+
+# Perl file replacement
+perl -pi.bak -e "s/<server_list>/$srvr_list/g" /home/matt/repos/kafka-python-postgres-etl/src/nginx/app.conf
+perl -pi.bak -e "s/<endpoint>/events/g" /home/matt/repos/kafka-python-postgres-etl/src/nginx/app.conf
+sudo docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' nginx
+
 
 # Vehicle container
 sudo docker run --name vehicle \
