@@ -49,7 +49,7 @@ The server infrastructure has one or more of the following containers:
 - [bitnami/kafka:3.3.1](https://hub.docker.com/r/bitnami/kafka) -- Kafka broker(s)
 - [bitnami/zookeeper:3.7.1](https://hub.docker.com/r/bitnami/zookeeper) -- Zookeeper to administrate Kafka brokers
 
-This infrastructure is arbitrarily scalable, i.e.,all containers except Postgres and nginx can be duplicated:
+This infrastructure is highly scalable, i.e., all containers except Postgres and nginx can be duplicated:
 
 For Kafka Brokers, more instances enable higher data replication.
 For Zookeepers, more instances means more fault tolerance*.
