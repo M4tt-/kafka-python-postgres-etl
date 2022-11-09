@@ -19,7 +19,7 @@
 
 # Usage: see teardown_infra.sh --help
 
-set -euo pipefail
+#set -euo pipefail
 
 ###################################################
 # FUNCTION: HELP MENU                             #
@@ -50,6 +50,10 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         shift # past argument
         shift # past value
         ;;
+        -v)
+        shift # past argument
+        shift # past value
+        ;;
         -*)
         echo "Unknown option $1"
         exit 1
@@ -65,34 +69,71 @@ done
 
 CONSUMER_NAME=$(jq -r .CONSUMER_NAME "$MASTER_CONFIG")
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MASTER_CONFIG")
-KAFKA_NAME=$(jq -r .KAFKA_NAME "$MASTER_CONFIG")
+KAFKA_BROKER_NAME=$(jq -r .KAFKA_BROKER_NAME "$MASTER_CONFIG")
+NGINX_NAME=$(jq -r .NGINX_NAME "$MASTER_CONFIG")
 POSTGRES_NAME=$(jq -r .POSTGRES_NAME "$MASTER_CONFIG")
 PRODUCER_NAME=$(jq -r .PRODUCER_NAME "$MASTER_CONFIG")
 ZOOKEEPER_NAME=$(jq -r .ZOOKEEPER_NAME "$MASTER_CONFIG")
+
+########### GET REFERENCE PATH ###################
+
+MY_PATH=$(dirname "$0")            # relative
+MY_PATH=$(cd "$MY_PATH" && pwd)    # absolutized and normalized
+if [[ -z "$MY_PATH" ]]
+then
+  exit 1  # fail
+fi
+SRC_PATH="$(dirname "$MY_PATH")/src"
 
 ############ DOCKER CONTAINERS: GET ############
 
 container_names=$(sudo docker ps -a --format "{{.Names}}")
 
 ############  CONSUMER TEARDOWN ############
-if [[ "$container_names" == *"$CONSUMER_NAME"* ]]
+printf "Tearing down KafkaConsumers ...\n\n"
+consumer_names=$(sudo docker ps -a --format "{{.Names}}" | grep -e "${CONSUMER_NAME}[0-9]\+")
+for consumer_name in $consumer_names
+do
+    if [[ "$container_names" == *"$consumer_name"* ]]
+    then
+        printf "Stopping %s ..." "$consumer_name"
+        sudo docker stop "$consumer_name">/dev/null
+        sudo docker rm "$consumer_name">/dev/null
+        printf " Done.\n"
+    fi
+done
+
+############  NGINX TEARDOWN ############
+printf "\nTearing down Load Balancer ...\n\n"
+
+if [[ "$container_names" == *"$NGINX_NAME"* ]]
 then
-    printf "Stopping %s ..." "$CONSUMER_NAME"
-    sudo docker stop "$CONSUMER_NAME">/dev/null
-    sudo docker rm "$CONSUMER_NAME">/dev/null
-    printf "Done.\n\n"
+    printf "Stopping %s ..." "$NGINX_NAME"
+    sudo docker stop "$NGINX_NAME">/dev/null
+    sudo docker rm "$NGINX_NAME">/dev/null
+    printf " Done.\n"
 fi
+
+#printf "Restoring app.conf.bak ... "
+#rm "$SRC_PATH"/nginx/app.conf
+#printf "Done.\n"
 
 ############  PRODUCER TEARDOWN ############
-if [[ "$container_names" == *"$PRODUCER_NAME"* ]]
-then
-    printf "Stopping %s ..." "$PRODUCER_NAME"
-    sudo docker stop "$PRODUCER_NAME">/dev/null
-    sudo docker rm "$PRODUCER_NAME">/dev/null
-    printf "Done.\n\n"
-fi
+printf "\nTearing down KafkaProducers ...\n\n"
+producer_names=$(sudo docker ps -a --format "{{.Names}}" | grep -e "${PRODUCER_NAME}[0-9]\+")
+for producer_name in $producer_names
+do
+    if [[ "$container_names" == *"$producer_name"* ]]
+    then
+        printf "Stopping %s ..." "$producer_name"
+        sudo docker stop "$producer_name">/dev/null
+        sudo docker rm "$producer_name">/dev/null
+        printf " Done.\n"
+    fi
+done
 
 ############  POSTGRES TEARDOWN ############
+printf "\nTearing down Postgres ...\n\n"
 if [[ "$container_names" == *"$POSTGRES_NAME"* ]]
 then
     printf "Stopping %s ..." "$POSTGRES_NAME"
@@ -102,22 +143,27 @@ then
 fi
 
 ############  KAFKA TEARDOWN ############
-if [[ "$container_names" == *"$KAFKA_NAME"* ]]
-then
-    printf "Stopping %s ..." "$KAFKA_NAME"
-    sudo docker stop "$KAFKA_NAME">/dev/null
-    sudo docker rm "$KAFKA_NAME">/dev/null
-    printf "Done.\n\n"
-fi
+printf "\nTearing down Kafka Brokers ...\n\n"
+broker_names=$(sudo docker ps -a --format "{{.Names}}" | grep -e "${KAFKA_BROKER_NAME}[0-9]\+")
+for broker in $broker_names
+do
+    printf "Tearing down %s ..." "$broker"
+    sudo docker stop "$broker" > /dev/null
+    sudo docker rm "$broker" > /dev/null
+    printf " Done.\n"
+done
 
 ############ ZOOKEEPER TEARDOWN ############
-if [[ "$container_names" == *"$ZOOKEEPER_NAME"* ]]
-then
-    printf "Stopping %s ..." "$ZOOKEEPER_NAME"
-    sudo docker stop "$ZOOKEEPER_NAME">/dev/null
-    sudo docker rm "$ZOOKEEPER_NAME">/dev/null
-    printf "Done.\n\n"
-fi
+printf "\nTearing down Zookeeper ensemble ...\n\n"
+zookeeper_names=$(sudo docker ps -a --format "{{.Names}}" | grep -e "${ZOOKEEPER_NAME}[0-9]\+")
+
+for zookeeper in $zookeeper_names
+do
+    printf "Tearing down %s ..." "$zookeeper"
+    sudo docker stop "$zookeeper" > /dev/null
+    sudo docker rm "$zookeeper" > /dev/null
+    printf " Done.\n"
+done
 
 ############ DOCKER NETWORK ############
 docker_networks=$(sudo docker network ls --format "{{.Name}}")
@@ -125,5 +171,5 @@ if [[ "$docker_networks" == *"$DOCKER_NETWORK"* ]]
 then
     printf "Removing Docker network %s ..." "$DOCKER_NETWORK"
     sudo docker network rm "$DOCKER_NETWORK">/dev/null
-    printf "Done.\n\n"
+    printf " Done.\n\n"
 fi

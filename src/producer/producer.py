@@ -18,7 +18,8 @@ from kafka import KafkaProducer
 
 # %% CONSTANTS
 
-BAD_CLIENT_IDS = ['null', "none", "default"]
+BAD_CLIENT_IDS = ['null', "none", "default", None]
+BAD_MESSAGE_KEYS = ['null', "none", "default", None]
 DEFAULT_PRODUCER_ENCODING = "utf-8"
 
 # %% CLASSES
@@ -48,9 +49,10 @@ class Producer(KafkaProducer):
             None.
         """
 
-        kafka_name = os.environ.get('KAFKA_NAME')
+        kafka_name = os.environ.get('KAFKA_BROKER_NAME')
+        kafka_id = os.environ.get('KAFKA_BROKER_ID_SEED')
         kafka_port = os.environ.get('KAFKA_PORT')
-        kafka_server = f"{kafka_name}:{kafka_port}"
+        kafka_server = f"{kafka_name}{kafka_id}:{kafka_port}"
         self.producer_kwargs = {}
         self.producer_kwargs['bootstrap_servers'] = kafka_server
 
@@ -64,6 +66,7 @@ class Producer(KafkaProducer):
             del self.producer_kwargs['client_id']
 
         self.kafka_topic = os.environ.get('KAFKA_TOPIC')
+        self.kafka_message_key = os.environ.get('PRODUCER_MESSAGE_KEY')
         self.ingress_listener = os.environ.get("PRODUCER_INGRESS_HTTP_LISTENER")
         self.ingress_port = os.environ.get("PRODUCER_HTTP_PORT")
         self.http_rule = os.environ.get("PRODUCER_HTTP_RULE")
@@ -78,7 +81,7 @@ class Producer(KafkaProducer):
         if request.method in ['GET']:
             out_str = f"Welcome to KafkaProducer/HTTPServer!\n\n" \
                       f"Events served: {self.post_count}."
-            return out_str
+            return out_str, 200
 
         if request.method in ['POST']:
             self.post_count += 1
@@ -107,7 +110,14 @@ class Producer(KafkaProducer):
         """
 
         event = json.dumps(data)
-        self.send(self.kafka_topic, bytearray(event.encode(encoding)))
+        binary_data = bytearray(event.encode(encoding))
+        if self.kafka_message_key in BAD_MESSAGE_KEYS:
+            self.send(self.kafka_topic, binary_data)
+        else:
+            self.send(self.kafka_topic,
+                      key=bytearray(self.kafka_message_key.encode(encoding)),
+                      value=binary_data)
+        print(f"Producer sent: {binary_data}")
         return event
 
     def start(self):

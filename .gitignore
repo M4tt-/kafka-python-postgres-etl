@@ -130,3 +130,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# configuration
+src/nginx/app.conf
+scripts/debug_containers

@@ -47,11 +47,13 @@ class Consumer(KafkaConsumer):
             None.
         """
 
-        kafka_name = os.environ.get('KAFKA_NAME')
+        kafka_name = os.environ.get('KAFKA_BROKER_NAME')
+        kafka_id = os.environ.get('KAFKA_BROKER_ID_SEED')
         kafka_port = os.environ.get('KAFKA_PORT')
-        kafka_server = f"{kafka_name}:{kafka_port}"
+        kafka_server = f"{kafka_name}{kafka_id}:{kafka_port}"
         self.consumer_kwargs = {}
         self.consumer_kwargs['bootstrap_servers'] = kafka_server
+        self.consumer_kwargs['group_id'] = os.environ.get('CONSUMER_GROUP', None)
 
         # The default client_id is already chosen intelligently -- don't change
         try:

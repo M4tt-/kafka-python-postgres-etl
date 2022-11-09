@@ -35,6 +35,10 @@ while (( "$#" )); do   # Evaluate length of param array and exit at zero
         help;
         exit 0
         ;;
+        -v)
+        shift # past argument
+        shift # past value
+        ;;
         -*)
         echo "Unknown option $1"
         exit 1

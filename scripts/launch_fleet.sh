@@ -58,6 +58,15 @@ dump_config() {
 }
 
 ###################################################
+# FUNCTION: PARSE FOR HTTP SERVER FROM FILE       #
+###################################################
+
+get_http_server_from_file() {
+
+    parsed_srv=$(cat "$HTTP_LOG_FILE" | tail -1 | cut -d":" -f2)
+}
+
+###################################################
 # MAIN                                            #
 ###################################################
 
@@ -104,8 +113,9 @@ done
 
 DOCKER_NETWORK=$(jq -r .DOCKER_NETWORK "$MASTER_CONFIG")
 HTTP_LOG_FILE=$(jq -r .HTTP_LOG_FILE "$MASTER_CONFIG")
+NGINX_NAME=$(jq -r .NGINX_NAME "$MASTER_CONFIG")
 PRODUCER_HTTP_RULE=$(jq -r .PRODUCER_HTTP_RULE "$MASTER_CONFIG")
-PRODUCER_HTTP_SERVER=$(tail -1 "$HTTP_LOG_FILE")
+PRODUCER_HTTP_SERVER=$(sudo docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$NGINX_NAME")
 PRODUCER_HTTP_PORT=$(jq -r .PRODUCER_CONTAINER_PORT "$MASTER_CONFIG")
 VEHICLE_REPORT_DELAY=$(jq -r .VEHICLE_REPORT_DELAY "$MASTER_CONFIG")
 VEHICLE_VELOCITY_X=$(jq -r .VEHICLE_VELOCITY_X "$MASTER_CONFIG")
@@ -117,8 +127,13 @@ SEMVER_TAG=$(jq -r .SEMVER_TAG "$MASTER_CONFIG")
 
 if ! [[ "$NUM_VEHICLES" =~ ^[0-9]+$ ]]
     then
-        printf "--num-vehicles must be integer. Exiting on 1 ..."
+        printf "--num-vehicles must be integer. Exiting on 1 ...\n"
         exit 1
+fi
+if [[ "$NUM_VEHICLES" -lt 1 ]]
+then
+    printf "NUM_VEHICLES cannot be < 1. $NUM_VEHICLES=%s\nExiting ..." "$NUM_VEHICLES"
+    exit 1
 fi
 
 if [[ $VERBOSITY == 1 ]]
