@@ -42,7 +42,7 @@ A dichotomy can be made of this project's components: server infrastructure (or 
 
 The server infrastructure has one or more of the following containers:
 
-- [_/nginx:1.23] (https://hub.docker.com/_/nginx) -- nginx load balancer (official image)
+- [_/nginx:1.23](https://hub.docker.com/_/nginx) -- nginx load balancer (official image)
 - [_/postgres:15.0](https://hub.docker.com/_/postgres) -- PostgreSQL data store (official image)
 - [m4ttl33t/consumer](https://hub.docker.com/r/m4ttl33t/consumer) -- Kafka Consumer / SQL writer
 - [m4ttl33t/producer](https://hub.docker.com/r/m4ttl33t/producer)-- Kafka Producer / HTTP server
