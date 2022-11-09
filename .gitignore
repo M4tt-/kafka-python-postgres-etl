@@ -133,3 +133,4 @@ dmypy.json
 
 # configuration
 src/nginx/app.conf
+scripts/debug_containers

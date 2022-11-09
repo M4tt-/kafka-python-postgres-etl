@@ -147,5 +147,6 @@ the .pylintrc at repo root:
 This project is done all on my own time outside of work hours, so it's not where I want it to be (but it will be one day soon!).
 Near-future changes to come:
 
+- Encrypt the Kafka comms with SSL
 - Add web-based visualizations for streaming data
 - Add IaC for cloud migration
