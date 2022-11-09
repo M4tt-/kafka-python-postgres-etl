@@ -132,4 +132,4 @@ dmypy.json
 .pyre/
 
 # configuration
-*.conf
+src/nginx/app.conf
