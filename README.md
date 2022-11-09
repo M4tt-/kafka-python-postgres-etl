@@ -1,9 +1,9 @@
 # kafka-python-postgres-etl
 
-This project demonstrates a containerized, Python-based, Kafka cluster for real-time streaming (and ETL) of vehcile data. It is written in Python 3.6 (see `requirements.txt`).
+This project demonstrates a containerized, Python-based, Kafka cluster for real-time streaming (and ETL) of vehicle data. It is written in Python 3.6 (see `requirements.txt`).
 
 There are two main goals:
-1. To (reliably) monitor and store real-time streaming data from a *fleet* of vehicles.
+1. To monitor and store real-time streaming data from a *fleet* of vehicles using Apache Kafka.
 2. To demonstrate how the infrastructure for such an application may be automatically provisioned (IaC) and scaled.
 
 Here's a short blurb about how it works:
@@ -34,7 +34,7 @@ When you're finished, you can similarly tear down the containers:
 
 ## Architecture
 
-![kafka-python-postgres-etl](img/kafka-python-postgres-etl_arch.JPG)
+![kafka-python-postgres-etl](img/kafka-python-postgres-etl_multinode_arch.JPG)
 
 A dichotomy can be made of this project's components: server infrastructure (or just "infrastructure") vs. clients.
 
@@ -49,7 +49,7 @@ The server infrastructure has one or more of the following containers:
 - [bitnami/kafka:3.3.1](https://hub.docker.com/r/bitnami/kafka) -- Kafka broker(s)
 - [bitnami/zookeeper:3.7.1](https://hub.docker.com/r/bitnami/zookeeper) -- Zookeeper to administrate Kafka brokers
 
-This infrastructure is highly scalable, i.e., all containers except Postgres and nginx can be duplicated:
+This infrastructure is highly scalable, i.e., all containers except Postgres and nginx can be duplicated to work in tandem:
 
 For Kafka Brokers, more instances enable higher data replication.
 For Zookeepers, more instances means more fault tolerance*.
