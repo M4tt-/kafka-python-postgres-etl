@@ -73,6 +73,7 @@ get_http_server_from_file() {
 ############# PARSE PARAMS ###################
 NUM_VEHICLES=1
 HTTP_HOST=""
+VERBOSITY=0
 while (( "$#" )); do   # Evaluate length of param array and exit at zero
     case $1 in
         -h|--help)

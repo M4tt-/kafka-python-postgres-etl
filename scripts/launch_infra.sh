@@ -291,15 +291,15 @@ nginx_init() {
         printf "  Constructing app.conf ..."
     fi
     # Construct the http config using perl find-replace
-    cp "$SRC_PATH"/nginx/app.conf.template "$SRC_PATH"/nginx/app.conf
+    cp "$SRC_PATH"/nginx/conf.d/app.conf.template "$SRC_PATH"/nginx/conf.d/app.conf
 
     # Upstream block
-    perl -pi -e "s/<server_list>/$srvr_list/g" "$SRC_PATH"/nginx/app.conf
+    perl -pi -e "s/<server_list>/$srvr_list/g" "$SRC_PATH"/nginx/conf.d/app.conf
 
     # Server block
-    perl -pi -e "s/<endpoint>/${PRODUCER_HTTP_RULE}/g" "$SRC_PATH"/nginx/app.conf
-    perl -pi -e "s/<producer_port>/${PRODUCER_CONTAINER_PORT}/g" "$SRC_PATH"/nginx/app.conf
-    perl -pi -e "s/<nginx_srv_name>/${NGINX_SERVER_NAME}/g" "$SRC_PATH"/nginx/app.conf
+    perl -pi -e "s/<endpoint>/${PRODUCER_HTTP_RULE}/g" "$SRC_PATH"/nginx/conf.d/app.conf
+    perl -pi -e "s/<producer_port>/${PRODUCER_CONTAINER_PORT}/g" "$SRC_PATH"/nginx/conf.d/app.conf
+    perl -pi -e "s/<nginx_srv_name>/${NGINX_SERVER_NAME}/g" "$SRC_PATH"/nginx/conf.d/app.conf
 
     if [[ "$VERBOSITY" == 1 ]]
     then
@@ -332,13 +332,15 @@ nginx_init() {
         sudo docker run --name "$NGINX_NAME" \
         --network "$DOCKER_NETWORK" \
         -p "$NGINX_HOST_PORT":"$NGINX_CONTAINER_PORT" \
-        -v "$SRC_PATH"/nginx:/etc/nginx/conf.d:ro \
+        -v "$SRC_PATH"/nginx/conf.d/:/etc/nginx/conf.d:ro \
+        -v "$SRC_PATH"/nginx/ssl:/etc/nginx/ssl:ro \
         -d nginx:1.23
     else
         sudo docker run --name "$NGINX_NAME" \
         --network "$DOCKER_NETWORK" \
         -p "$NGINX_HOST_PORT":"$NGINX_CONTAINER_PORT" \
-        -v "$SRC_PATH"/nginx:/etc/nginx/conf.d:ro \
+        -v "$SRC_PATH"/nginx/conf.d/:/etc/nginx/conf.d:ro \
+        -v "$SRC_PATH"/nginx/ssl:/etc/nginx/ssl:ro \
         -d nginx:1.23>/dev/null
     fi
 
@@ -362,7 +364,7 @@ nginx_init() {
     srvr_response=""
     for ((j=0; j<100; j++))
     do
-        srvr_response=$(curl http://"$lb_ip":"$PRODUCER_CONTAINER_PORT")
+        srvr_response=$(curl -k http://"$lb_ip":"$PRODUCER_CONTAINER_PORT")
         if [[ "$srvr_response" == *"Welcome to nginx!"* ]]
         then
             nginx_up=1

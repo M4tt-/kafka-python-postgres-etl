@@ -132,5 +132,5 @@ dmypy.json
 .pyre/
 
 # configuration
-src/nginx/app.conf
+src/nginx/conf.d/app.conf
 scripts/debug_containers
