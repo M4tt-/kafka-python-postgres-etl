@@ -59,6 +59,18 @@ since they all belong to the same consumer group and there is one partition.
 *This infrastructure operates locally for demonstration purposes, where each container communicates over a Docker bridge network. The notion of fault tolerance is weak,
 since bringing the one, local machine down will bring down every container anyway!
 
+### Security
+
+Given this is strictly a development environment, there are little security concerns -- every container is supposed to run on one's local machine on a private network.
+Therefore, little provisions have been made to secure the Kafka cluster or the `Vehicle`<->`LB` comms.
+
+For the NGINX LB, the SSL provisions are commented out in the config file, and a dummy private key is included in this repo. Again, you wouldn't include such
+keys if they were meaningful in prod, but these inactive security provisions are here for the sake of simple demonstration.
+
+For the Kafka cluster, the security protocol is PLAINTEXT. In production envs, this could change; Apache Kafka comes with a few options for implementing enhanced security. The clients (producers and consumers) can authenticate with brokers via SSL or SASL. Brokers can authenticate with Zookeeper through SASL and/or mTLS. Further, the data transfer between
+most cluster components can also be encrypted via SSL, and specific authorizations can be granted for specific operations between specific entities
+in the cluster. This is a big topic that isn't studied here.
+
 ### Kafka Cluster
 
 Apache Kafka is used as the main publish-subscribe system. In general, a production-grade cluster would be distributed across multiple,
@@ -69,12 +81,6 @@ These differing cases (true multi-server vs local multi-container) are not so di
 to provide data redundancy; there are still multiple consumers to read
 from each partition; zookeeper containers still elect leaders when a container fails, etc. At least one big difference or drawback
 with the local, multi-container case is there is **only one machine** -- bringing the _machine_ down brings down the whole cluster!
-
-**Security** is always worth mentioning; little provisions have been made to secure this Kafka cluster, and the security protocol is PLAINTEXT.
-In production, this would change; Apache Kafka comes with a few options for implementing enhanced security. The clients (producers and consumers)
-can authenticate with brokers via SSL or SASL. Brokers can authenticate with Zookeeper through SASL and/or mTLS. Further, the data transfer between
-most cluster components can also be encrypted via SSL, and specific authorizations can be granted for specific operations between specific entities
-in the cluster. This is a big topic that isn't studied here.
 
 #### Consumers
 
